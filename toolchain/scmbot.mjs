@@ -31,6 +31,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HOME = process.env.SCMBOT_HOME || dirname(dirname(fileURLToPath(import.meta.url)));   // native/ (or /scmbot in the image)
 const OBJ = process.env.SCMBOT_OBJ || join(HOME, "out/obj/toolchain");
 export const TOOLCHAIN = "scmbot 1 (BWAPI 4.4.0)";
+/** How the person types this, for the messages that say what to run next (`scmjs bot` passes its own name). */
+const CMD = process.env.SCMBOT_COMMAND || "scmbot";
 const FORMAT = 1;
 
 /** The compile flags every object gets: BWAPI's in-game headers, the Windows stand-ins, SCM_SIM. */
@@ -345,7 +347,7 @@ const KEY = /^[a-z0-9_-]{1,32}$/;
 /** The bot's scmbot.json, checked. */
 function readConfig(dir) {
   const file = join(dir, "scmbot.json");
-  if (!existsSync(file)) throw new Error(`no scmbot.json in ${dir} (scmbot init writes one to start from)`);
+  if (!existsSync(file)) throw new Error(`no scmbot.json in ${dir} (${CMD} init writes one to start from)`);
   const c = JSON.parse(readFileSync(file, "utf8"));
   const list = (v, what) => { if (v === undefined) return []; if (!Array.isArray(v) || v.some((x) => typeof x !== "string")) throw new Error(`scmbot.json: ${what} is a list of strings`); return v; };
   if (typeof c.key !== "string" || !KEY.test(c.key)) throw new Error("scmbot.json: key is the bot's short name: a to z, 0 to 9, - and _, at most 32");
@@ -485,7 +487,7 @@ async function build(dir) {
   if (linked.code !== 0) {
     const missing = [...new Set((linked.err.match(/undefined symbol: [^\n(]+/g) ?? []).map((m) => m.slice(18).trim()))];
     const hints = [];
-    if (missing.some((m) => /gameInit|newAIModule/.test(m))) hints.push("no module entry: an AI module defines gameInit and newAIModule (BWAPI's ExampleAIModule/Source/Dll.cpp); a client program can have scmbot write one: \"entry\" in scmbot.json (scmbot init fills it in when it finds the client's loop)");
+    if (missing.some((m) => /gameInit|newAIModule/.test(m))) hints.push("no module entry: an AI module defines gameInit and newAIModule (BWAPI's ExampleAIModule/Source/Dll.cpp); a client program can have scmbot write one: \"entry\" in scmbot.json (" + CMD + " init fills it in when it finds the client's loop)");
     if (missing.some((m) => /BWAPIClient|BWAPI::Client/.test(m))) hints.push("a client program's own main is among the sources: leave it out (\"exclude\") and use \"entry\"");
     if (missing.some((m) => /BWTA|BWEM/.test(m)) && !hints.length) hints.push("a map analysis library's sources are not among the bot's: add their folder to \"sources\"");
     if (missing.length && !hints.length) hints.push("these are defined in no source given: a file left out of \"sources\", or a library the bot links on Windows (its .lib): its sources go in too");
@@ -648,12 +650,12 @@ function init(dir, chosen) {
   const say = [];
   if (best) say.push(`scmbot.json written from ${relative(root, best.p)}: ${config.sources.length} sources, ${config.include.length} include folders${config.defines.length ? `, defines ${config.defines.join(" ")}` : ""}.`);
   else say.push("scmbot.json written. No Visual Studio project here: name the bot's sources and include folders in it.");
-  if (read.length > 1) say.push(`(${read.length} projects here; for another: scmbot init <its .vcxproj>)`);
+  if (read.length > 1) say.push(`(${read.length} projects here; for another: ${CMD} init <its .vcxproj>)`);
   if (config.files) say.push(`Files it reads, put with it: ${config.files.map((f) => f.to).join(", ")} (check "files").`);
   if (best?.client) say.push(`It is a client program: ${best.client.main} is left out, and the module entry makes ${best.client.entry.class} for each game${best.client.entry.setup.length ? `, after ${best.client.entry.setup.join(" ")} once` : ""}. Check "entry".`);
   else if (best && !best.module) say.push("note: no source defines newAIModule, and no client loop was found: the bot needs a module entry (see \"entry\" in the guide).");
   if (!existsSync(join(root, license))) say.push(`note: no licence file found: name the bot's in "license" (it goes with every build).`);
-  say.push("next: scmbot build");
+  say.push(`next: ${CMD} build`);
   console.log(say.join("\n"));
 }
 
@@ -750,14 +752,17 @@ extern "C" BWAPI::AIModule *newAIModule() { return new MyBot(); }
   const name = folderName(root) || "mybot";
   const key = name.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "mybot";
   writeFileSync(join(root, "scmbot.json"), JSON.stringify({ key, name: name.slice(0, 32), license: "LICENSE", source: "", commit: "", sources: ["src/**/*.cpp"], include: ["src"], std: "c++17", memoryMB: 1536 }, null, 2) + "\n");
-  console.log(`a bot to start from: src/MyBot.cpp (workers mine, the base trains more), scmbot.json.${existsSync(join(root, "LICENSE")) ? "" : "\nAdd a LICENSE file (any licence you choose): it goes with every build."}\nnext: scmbot build`);
+  console.log(`a bot to start from: src/MyBot.cpp (workers mine, the base trains more), scmbot.json.${existsSync(join(root, "LICENSE")) ? "" : "\nAdd a LICENSE file (any licence you choose): it goes with every build."}\nnext: ${CMD} build`);
 }
 
-const USAGE = `scmbot: build a BWAPI 4.4.0 bot for scm-sim's play page.
+const COMMANDS = [
+  ["new", "a bot to start from, in this folder"],
+  ["init [project.vcxproj]", "scmbot.json for the bot in this folder, read from its Visual Studio project"],
+  ["build", "out/<key>.scmbot, to add on the play page"],
+];
+const USAGE = `${CMD}: build a BWAPI 4.4.0 bot for scm-sim's play page.
 
-  scmbot new                       a bot to start from, in this folder
-  scmbot init [project.vcxproj]    scmbot.json for the bot in this folder, read from its Visual Studio project
-  scmbot build                     out/<key>.scmbot, to add on the play page
+${COMMANDS.map(([c, what]) => `  ${`${CMD} ${c}`.padEnd(CMD.length + 26)}${what}`).join("\n")}
 
 Guide: https://github.com/scm-js/scmbot`;
 
@@ -772,7 +777,7 @@ try {
   else if (command === "new") starter(here);
   else if (command === "help" || command === "--help" || command === "-h") console.log(USAGE);
   else throw new Error(`no command ${command}\n\n${USAGE}`);
-} catch (e) { console.error(`scmbot: ${e instanceof Error ? e.message : e}`); process.exit(1); }
+} catch (e) { console.error(`${CMD}: ${e instanceof Error ? e.message : e}`); process.exit(1); }
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) await main();
 
