@@ -1,0 +1,6 @@
+toolchain/scmbot
+toolchain/scmbot.cmd
+tests
+node_modules
+.github
+*.md

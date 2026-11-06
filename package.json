@@ -1,0 +1,13 @@
+{
+  "name": "scmbot",
+  "private": true,
+  "description": "Build a BWAPI 4.4.0 bot into a .scmbot file for scmjs.dev/play",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}

@@ -1,0 +1,27 @@
+#!/bin/sh
+# scmbot, run in the bot's folder: toolchain/scmbot new | init | build (github.com/scm-js/scmbot).
+# Docker runs it. The image is the one made from this toolchain: downloaded from GitHub's container registry the first
+# time (github.com/scm-js/scmbot publishes it), or built here when the registry has none for it, as when
+# the toolchain was changed in this clone. SCMBOT_IMAGE=<image> runs that image instead and skips both.
+set -e
+here=$(cd "$(dirname "$0")" && pwd)
+native=$(dirname "$here")
+image=${SCMBOT_IMAGE:-scmbot}
+registry=ghcr.io/scm-js/scmbot
+if [ -z "$SCMBOT_IMAGE" ]; then
+  # The stamp names this toolchain; scmbot's image.yml works it out with the same command, so keep the two alike.
+  stamp=$(cd "$native" && find toolchain shim host bwapi -type f ! -name scmbot ! -name scmbot.cmd -print0 | LC_ALL=C sort -z | xargs -0 cat | (sha1sum 2>/dev/null || shasum) | cut -c1-12)
+  if [ "$(docker image inspect -f '{{index .Config.Labels "scmbot"}}' "$image" 2>/dev/null)" != "$stamp" ]; then
+    log=$(mktemp)
+    echo "scmbot: downloading the toolchain image (once; it is a large download)" >&2
+    if docker pull -q "$registry:$stamp" >"$log" 2>&1; then
+      docker tag "$registry:$stamp" "$image"
+    else
+      echo "scmbot: none is published for this toolchain, so it is built here (the first time takes a few minutes)" >&2
+      if ! docker build -q --label "scmbot=$stamp" -f "$here/Dockerfile" -t "$image" "$native" >"$log" 2>&1; then cat "$log" >&2; rm -f "$log"; exit 1; fi
+    fi
+    rm -f "$log"
+  fi
+fi
+tty=; [ -t 1 ] && tty=-t
+exec docker run --rm $tty -e SCMBOT_FOLDER="$(basename "$PWD")" -v "$PWD":/bot -u "$(id -u):$(id -g)" "$image" "$@"

@@ -1,0 +1,68 @@
+# The toolchain image, ghcr.io/scm-js/scmbot, for linux/amd64 and linux/arm64: built again when the files it is made
+# from change (or by hand).
+#
+# Tags: `latest`, and the toolchain's stamp, a hash of those files. toolchain/scmbot works the stamp out the same
+# way and pulls that tag, so a clone gets the image of its own files and builds one only when it has changed them.
+# The stamp's command below and the one in toolchain/scmbot must stay the same.
+name: Image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - toolchain/**
+      - shim/**
+      - host/**
+      - bwapi/**
+      - .dockerignore
+      - .github/workflows/image.yml
+  workflow_dispatch:
+
+jobs:
+  image:
+    name: Build and push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: The toolchain's stamp
+        id: stamp
+        run: |
+          stamp=$(find toolchain shim host bwapi -type f ! -name scmbot ! -name scmbot.cmd -print0 | LC_ALL=C sort -z | xargs -0 cat | sha1sum | cut -c1-12)
+          echo "stamp=$stamp" >> "$GITHUB_OUTPUT"
+      # arm64 is built under emulation: slower (the BWAPI compile), but only when the toolchain changes.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: toolchain/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: true
+          sbom: true
+          tags: |
+            ghcr.io/scm-js/scmbot:latest
+            ghcr.io/scm-js/scmbot:${{ steps.stamp.outputs.stamp }}
+          labels: |
+            scmbot=${{ steps.stamp.outputs.stamp }}
+            org.opencontainers.image.title=scmbot
+            org.opencontainers.image.description=Builds a BWAPI 4.4.0 bot into a .scmbot file for scmjs.dev/play.
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+      - name: Summary
+        run: |
+          {
+            echo "### ghcr.io/scm-js/scmbot:${{ steps.stamp.outputs.stamp }} (and latest)"
+            echo
+            echo '```sh'
+            echo 'docker run --rm -it -v "$PWD":/bot -u "$(id -u):$(id -g)" ghcr.io/scm-js/scmbot build'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
