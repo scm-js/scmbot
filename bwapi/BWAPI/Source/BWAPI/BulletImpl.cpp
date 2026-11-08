@@ -45,7 +45,7 @@ namespace BWAPI
       return nullptr;
 
     int index = bullet - BW::BWDATA::BulletNodeTable.data();
-    if ( index > BW::BULLET_ARRAY_MAX_LENGTH )
+    if ( index < 0 || index >= (int)BW::layout.bulletSlots ) // scm-sim: the game's slots (BW/Layout.h)
       return nullptr;
     return BroodwarImpl.getBulletFromIndex(index);
   }

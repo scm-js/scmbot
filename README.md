@@ -77,7 +77,7 @@ you built or trust.
 | `include` | Include folders. BWAPI's own headers (`<BWAPI.h>`) are always there. |
 | `defines` | Preprocessor definitions, as `NAME` or `NAME=value`. |
 | `std` | `c++14`, `c++17` (the default) or `c++20`. |
-| `memoryMB` | The whole memory: the game's 1024 MB and the bot's above it, 1088–3072. 1792 is enough for McRave. |
+| `botMB` | The bot's room: BWAPI's data and the bot's heap, above the game's 2 GB; 64–2047 (768 if unsure, enough for McRave). An older `memoryMB` (the game's 1024 MB and the room) is still read: the room is `memoryMB` less 1024. |
 | `files` | Files the bot reads, put where it looks for them: `[{ "from": "bin/x.txt", "to": "x.txt" }]`. `to` is a path from StarCraft's folder, as on Windows. |
 | `entry` | For a client program: see below. |
 | `prelude` | A header included before every source, for anything else the bot assumed of its compiler. |
@@ -162,9 +162,42 @@ upgrade 61, tech 44). A bot that uses the names needs only a rebuild; one that w
 still plays, with 1.16.1's types written in. Run `docker pull ghcr.io/scm-js/scmbot` and
 `scmbot build` again for the types from the game.
 
+## Beside a mod's plugins
+
+Some mods carry plugins: code that runs inside the game (GPTP's, in Cosmonarchy, say). Such a
+plugin can move the game's tables and make them bigger: Cosmonarchy's has room for 4,095 units
+where the game had 1,700, 2,048 bullets, and counts, deaths and kills for its 3,000 unit types.
+
+**The memory.** The game and its plugins are 32-bit Windows code and keep everything below 2 GB;
+the plugins' heap grows up to there. A bot built with scmbot 3 (`scmbot 3 (BWAPI 4.4.0, types from
+the game's data, beside a mod's plugins)` in its header) keeps its own memory above 2 GB, so the
+page gives a game with it 2 GB and the bot's room: 2.75 GB for McRave's 768 MB. A bundle built
+before keeps its memory at 1 GB, where the plugins keep theirs: it still plays vanilla games and
+mods without plugins, and the page refuses it beside a mod's plugins, saying to build it again.
+
+**What BWAPI reads.** BWAPI 4.4 reads the game at 1.16.1's addresses. Built with scmbot 3, it reads
+the game's tables where the game's own code says they are, at the start of the match: the units
+and their number, the unit finders, the bullets, the counts, deaths and kills, which units a player
+may make, the upgrade levels and the techs. Where nothing moved these are 1.16.1's places, and a
+bot sees what it saw. Beside the plugins, `allUnitCount`, `completedUnitCount`, `deadUnitCount`,
+`killedUnitCount`, `getUpgradeLevel`, `hasResearched` and `isUnitAvailable` answer for the mod's
+own types too (`UnitType(494)`), and a unit's id in a command is the plugin's (12 bits of slot,
+not 11).
+
+**What a bot sees of a mod.** BWAPI's types are the mod's (above). A bot written for the game's
+own units still names them by 1.16.1's numbers, which mean the mod's units in the same places: in
+Cosmonarchy the terran worker is still type 7 and its hall type 106, so `getRace().getWorker()`
+trains it. A plan made for vanilla units is not a plan for a mod's; a bot for a mod is written
+against its types.
+
+**GameData**, the block a client process reads, keeps BWAPI 4.4's widths: it lists 1,700 unit
+slots, 100 bullets and counts for 234 types. A mod's type past 4.4's numbers is named in a unit's
+fields by its own id (by 4.4's `Unknown` where its id would read as one of 4.4's markers), and has
+no count there.
+
 ## What is different from Windows
 
-- One BWAPI bot a game: every build puts its memory at the same place.
+- One BWAPI bot a game: every build puts its memory at the same place (2 GB).
 - Threads cannot be started, and there is no network.
 - The bot's clock is the real one. A bot that stops searching after so many milliseconds plays a
   little differently each game, as it does in the game.

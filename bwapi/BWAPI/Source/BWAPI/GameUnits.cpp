@@ -7,7 +7,10 @@
 #include <BWAPI/UnitImpl.h>
 #include <BWAPI/PlayerImpl.h>
 #include <BWAPI/Order.h>
+#include <BW/Offsets.h>
+#include <algorithm>
 #include <cassert>
+#include <initializer_list>
 
 #include <Debug.h>
 
@@ -17,7 +20,7 @@ namespace BWAPI
   //------------------------------------------------ GET UNIT FROM INDEX -------------------------------------
   UnitImpl* GameImpl::getUnitFromIndex(int index)
   {
-    index &= 0x7FF;
+    index &= BW::layout.slotMask(); // scm-sim: the game's slots (BW/Layout.h)
     if (static_cast<unsigned>(index) < unitArray.size())
       return this->unitArray[index];
     return nullptr;
@@ -325,6 +328,9 @@ namespace BWAPI
       MemZero(pd->allUnitCount);
       MemZero(pd->visibleUnitCount);
       MemZero(pd->completedUnitCount);
+      // scm-sim: and the game's types 4.4 had no number for (PlayerImpl.h)
+      p->scmsimWide.size(BW::layout.unitTypes, BW::layout.upgradeTypes, BW::layout.techTypes);
+      for (auto *v : { &p->scmsimWide.all, &p->scmsimWide.visible, &p->scmsimWide.completed }) std::fill(v->begin(), v->end(), 0);
     }
 
     for(Unit u : discoverUnits)
@@ -405,7 +411,7 @@ namespace BWAPI
         static_cast<PlayerImpl*>(u->_getPlayer)->units.insert(u);
       }
       // scm-sim: the counts are filed by BWAPI 4.4's numbers (Client/PlayerData.h, Wire); a mod's type past 1.16.1's
-      // has no place there and counts only in the macro types.
+      // has no place there and is counted by its own id in the player's `scmsimWide` (PlayerImpl.h, C2).
       int allUnits  = Wire::unitType(UnitTypes::AllUnits);
       int men       = Wire::unitType(UnitTypes::Men);
       int buildings = Wire::unitType(UnitTypes::Buildings);
@@ -421,6 +427,15 @@ namespace BWAPI
         pSelf->visibleUnitCount[thisUnit]++;
       if (u->isCompleted())
         pSelf->completedUnitCount[thisUnit]++;
+      }
+      else if ( u->_getType >= 0 && u->_getType < (int)static_cast<PlayerImpl*>(u->_getPlayer)->scmsimWide.all.size() )
+      {
+        PlayerImpl::ScmsimWide &w = static_cast<PlayerImpl*>(u->_getPlayer)->scmsimWide;
+        w.all[u->_getType]++;
+        if (u->isVisible())
+          w.visible[u->_getType]++;
+        if (u->isCompleted())
+          w.completed[u->_getType]++;
       }
       // increment all unit count
       pSelf->allUnitCount[allUnits]++;

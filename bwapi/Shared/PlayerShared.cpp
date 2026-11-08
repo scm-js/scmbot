@@ -88,27 +88,27 @@ namespace BWAPI
   //--------------------------------------------- ALL UNIT COUNT ---------------------------------------------
   int PlayerImpl::allUnitCount(UnitType unit) const
   {
-    return Wire::unitType(unit) >= 0 ? self->allUnitCount[Wire::unitType(unit)] : 0; // scm-sim: 4.4's numbering (PlayerData.h)
+    return Wire::unitType(unit) >= 0 ? self->allUnitCount[Wire::unitType(unit)] : scmsimWide.at(scmsimWide.all, unit); // scm-sim: 4.4's numbering (PlayerData.h), else the game's (PlayerImpl.h)
   }
   //--------------------------------------------- VISIBLE UNIT COUNT -----------------------------------------
   int PlayerImpl::visibleUnitCount(UnitType unit) const
   {
-    return Wire::unitType(unit) >= 0 ? self->visibleUnitCount[Wire::unitType(unit)] : 0; // scm-sim: 4.4's numbering (PlayerData.h)
+    return Wire::unitType(unit) >= 0 ? self->visibleUnitCount[Wire::unitType(unit)] : scmsimWide.at(scmsimWide.visible, unit); // scm-sim: 4.4's numbering (PlayerData.h), else the game's (PlayerImpl.h)
   }
   //--------------------------------------------- COMPLETED UNIT COUNT ---------------------------------------
   int PlayerImpl::completedUnitCount(UnitType unit) const
   {
-    return Wire::unitType(unit) >= 0 ? self->completedUnitCount[Wire::unitType(unit)] : 0; // scm-sim: 4.4's numbering (PlayerData.h)
+    return Wire::unitType(unit) >= 0 ? self->completedUnitCount[Wire::unitType(unit)] : scmsimWide.at(scmsimWide.completed, unit); // scm-sim: 4.4's numbering (PlayerData.h), else the game's (PlayerImpl.h)
   }
   //--------------------------------------------- DEAD UNIT COUNT --------------------------------------------
   int PlayerImpl::deadUnitCount(UnitType unit) const
   {
-    return Wire::unitType(unit) >= 0 ? self->deadUnitCount[Wire::unitType(unit)] : 0; // scm-sim: 4.4's numbering (PlayerData.h)
+    return Wire::unitType(unit) >= 0 ? self->deadUnitCount[Wire::unitType(unit)] : scmsimWide.at(scmsimWide.dead, unit); // scm-sim: 4.4's numbering (PlayerData.h), else the game's (PlayerImpl.h)
   }
   //--------------------------------------------- KILLED UNIT COUNT ------------------------------------------
   int PlayerImpl::killedUnitCount(UnitType unit) const
   {
-    return Wire::unitType(unit) >= 0 ? self->killedUnitCount[Wire::unitType(unit)] : 0; // scm-sim: 4.4's numbering (PlayerData.h)
+    return Wire::unitType(unit) >= 0 ? self->killedUnitCount[Wire::unitType(unit)] : scmsimWide.at(scmsimWide.killed, unit); // scm-sim: 4.4's numbering (PlayerData.h), else the game's (PlayerImpl.h)
   }
   //--------------------------------------------------- SCORE ------------------------------------------------
   int PlayerImpl::getUnitScore() const
@@ -134,22 +134,22 @@ namespace BWAPI
   //--------------------------------------------- GET UPGRADE LEVEL ------------------------------------------
   int PlayerImpl::getUpgradeLevel(UpgradeType upgrade) const
   {
-    return Wire::upgradeType(upgrade) >= 0 ? self->upgradeLevel[Wire::upgradeType(upgrade)] : 0; // scm-sim: 4.4's numbering
+    return Wire::upgradeType(upgrade) >= 0 ? self->upgradeLevel[Wire::upgradeType(upgrade)] : scmsimWide.at(scmsimWide.upgradeLevel, upgrade); // scm-sim: 4.4's numbering, else the game's
   }
   //--------------------------------------------- HAS RESEARCHED ---------------------------------------------
   bool PlayerImpl::hasResearched(TechType tech) const
   {
-    return Wire::techType(tech) >= 0 ? self->hasResearched[Wire::techType(tech)] : false; // scm-sim: 4.4's numbering
+    return Wire::techType(tech) >= 0 ? self->hasResearched[Wire::techType(tech)] : scmsimWide.on(scmsimWide.researched, tech); // scm-sim: 4.4's numbering, else the game's
   }
   //--------------------------------------------- IS RESEARCHING ---------------------------------------------
   bool PlayerImpl::isResearching(TechType tech) const
   {
-    return Wire::techType(tech) >= 0 ? self->isResearching[Wire::techType(tech)] : false; // scm-sim: 4.4's numbering
+    return Wire::techType(tech) >= 0 ? self->isResearching[Wire::techType(tech)] : scmsimWide.on(scmsimWide.researching, tech); // scm-sim: 4.4's numbering, else the game's
   }
   //--------------------------------------------- IS UPGRADING -----------------------------------------------
   bool PlayerImpl::isUpgrading(UpgradeType upgrade) const
   {
-    return Wire::upgradeType(upgrade) >= 0 ? self->isUpgrading[Wire::upgradeType(upgrade)] : false; // scm-sim: 4.4's numbering
+    return Wire::upgradeType(upgrade) >= 0 ? self->isUpgrading[Wire::upgradeType(upgrade)] : scmsimWide.on(scmsimWide.upgrading, upgrade); // scm-sim: 4.4's numbering, else the game's
   }
   //-------------------------------------------------- COLOUR ------------------------------------------------
   BWAPI::Color PlayerImpl::getColor() const
@@ -164,15 +164,15 @@ namespace BWAPI
   //------------------------------------------------ AVAILABILITY --------------------------------------------
   int PlayerImpl::getMaxUpgradeLevel(UpgradeType upgrade) const
   {
-    return Wire::upgradeType(upgrade) >= 0 ? self->maxUpgradeLevel[Wire::upgradeType(upgrade)] : 0; // scm-sim: 4.4's numbering
+    return Wire::upgradeType(upgrade) >= 0 ? self->maxUpgradeLevel[Wire::upgradeType(upgrade)] : scmsimWide.at(scmsimWide.maxUpgradeLevel, upgrade); // scm-sim: 4.4's numbering, else the game's
   }
   bool PlayerImpl::isResearchAvailable(TechType tech) const
   {
-    return Wire::techType(tech) >= 0 ? self->isResearchAvailable[Wire::techType(tech)] : false; // scm-sim: 4.4's numbering
+    return Wire::techType(tech) >= 0 ? self->isResearchAvailable[Wire::techType(tech)] : scmsimWide.on(scmsimWide.researchAvailable, tech); // scm-sim: 4.4's numbering, else the game's
   }
   bool PlayerImpl::isUnitAvailable(UnitType unit) const
   {
-    return Wire::unitType(unit) >= 0 ? self->isUnitAvailable[Wire::unitType(unit)] : false; // scm-sim: 4.4's numbering
+    return Wire::unitType(unit) >= 0 ? self->isUnitAvailable[Wire::unitType(unit)] : scmsimWide.on(scmsimWide.unitAvailable, unit); // scm-sim: 4.4's numbering, else the game's
   }
   //--------------------------------------------- LEFT GAME --------------------------------------------------
   bool PlayerImpl::leftGame() const

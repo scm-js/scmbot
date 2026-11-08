@@ -13,21 +13,25 @@
 #include <windows.h>
 #include <storm.h>
 
+#include <sstream>
 #include <BWAPI.h>
 #include "BWAPI/GameImpl.h"
+#include "BWAPI/PlayerImpl.h"
+#include <BW/Layout.h>
 #include "BWAPI/AutoMenuManager.h"
 #include <BW/Offsets.h>
 #include <BWAPI/Client/GameData.h>
 #include <Util/StringUtil.h>
 
-EM_JS(void, scm_print, (const char *text), { Module.scm.print(UTF8ToString(text)); });
-EM_JS(void, scm_error, (const char *text), { Module.scm.error(UTF8ToString(text)); });
+// (A pointer reaches JavaScript as a signed number: the module's memory lies above 2 GB, so each is taken `>>> 0`.)
+EM_JS(void, scm_print, (const char *text), { Module.scm.print(UTF8ToString(text >>> 0)); });
+EM_JS(void, scm_error, (const char *text), { Module.scm.error(UTF8ToString(text >>> 0)); });
 EM_JS(void, scm_call, (unsigned address), { Module.scm.call(address >>> 0); });
 EM_JS(double, scm_ms, (), { return Module.scm.now(); });
 EM_JS(void, scm_client, (), { Module.scm.client(); });
-EM_JS(void, scm_command, (const void *bytes, int length), { Module.scm.command(HEAPU8.slice(bytes, bytes + length)); });
+EM_JS(void, scm_command, (const void *bytes, int length), { bytes >>>= 0; Module.scm.command(HEAPU8.slice(bytes, bytes + length)); });
 EM_JS(void, scm_leave, (), { Module.scm.leave(); });
-EM_JS(void, scm_chat, (const char *text, int toAllies), { Module.scm.chat(UTF8ToString(text), toAllies !== 0); });
+EM_JS(void, scm_chat, (const char *text, int toAllies), { Module.scm.chat(UTF8ToString(text >>> 0), toAllies !== 0); });
 
 // ---- Config (Config.cpp read bwapi.ini; here the page hands the text over) ---------------------------------------
 static std::map<std::string, std::string> config;
@@ -283,6 +287,49 @@ extern "C"
       names.push_back(s.substr(at, end - at)); at = end + 1;
     }
     BWAPI::TypeData::setUnitNames(names);
+  }
+  /** Where BWAPI found the game's tables, in words (after the first frame): BW/Layout.h. */
+  EMSCRIPTEN_KEEPALIVE const char *scm_bwapi_layout_status() { return BW::LayoutRead::status().c_str(); }
+  /**
+   * What the bot is shown now, through BWAPI's own interface, as JSON (`Bwapi.view`): every player BWAPI has, by the
+   * game's player id, with its purse and supply, the units BWAPI lets the bot reach by type id, and every type id whose
+   * all, completed, dead or killed count is not 0 (the game's data's types, as wide as BW::layout has them).
+   */
+  EMSCRIPTEN_KEEPALIVE const char *scm_bwapi_view_json()
+  {
+    static std::string json;
+    std::ostringstream o;
+    BWAPI::Player self = BWAPI::Broodwar->self();
+    o << "{\"frame\":" << BWAPI::Broodwar->getFrameCount() << ",\"self\":" << (self ? static_cast<BWAPI::PlayerImpl *>(self)->getIndex() : -1) << ",\"players\":[";
+    bool firstPlayer = true;
+    for ( BWAPI::Player p : BWAPI::Broodwar->getPlayers() )
+    {
+      std::map<int, int> units;
+      for ( BWAPI::Unit u : p->getUnits() ) units[u->getType().getID()]++;
+      o << (firstPlayer ? "" : ",") << "{\"id\":" << static_cast<BWAPI::PlayerImpl *>(p)->getIndex() << ",\"minerals\":" << p->minerals() << ",\"gas\":" << p->gas()
+        << ",\"supplyUsed\":" << p->supplyUsed() << ",\"supplyTotal\":" << p->supplyTotal() << ",\"units\":{";
+      firstPlayer = false;
+      bool first = true;
+      for ( auto &e : units ) { o << (first ? "" : ",") << "\"" << e.first << "\":" << e.second; first = false; }
+      o << "}";
+      const char *names[] = { "all", "completed", "dead", "killed" };
+      for ( int k = 0; k < 4; ++k )
+      {
+        o << ",\"" << names[k] << "\":{";
+        first = true;
+        for ( int t = 0; t < BW::layout.unitTypes; ++t )
+        {
+          BWAPI::UnitType type(t);
+          int n = k == 0 ? p->allUnitCount(type) : k == 1 ? p->completedUnitCount(type) : k == 2 ? p->deadUnitCount(type) : p->killedUnitCount(type);
+          if ( n ) { o << (first ? "" : ",") << "\"" << t << "\":" << n; first = false; }
+        }
+        o << "}";
+      }
+      o << "}";
+    }
+    o << "]}";
+    json = o.str();
+    return json.c_str();
   }
   /** What the types were read from, in words (after the first frame). */
   EMSCRIPTEN_KEEPALIVE const char *scm_bwapi_types_status() { return BWAPI::TypeData::status().c_str(); }

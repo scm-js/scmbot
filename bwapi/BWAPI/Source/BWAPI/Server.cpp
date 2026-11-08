@@ -630,9 +630,10 @@ namespace BWAPI
         scmsimToWire(data->units[getUnitID(i)]);
       }
 
+      // scm-sim: the protocol holds 1,700 slots; a table a plugin made longer (BW/Layout.h) is listed as far as that
       for(int i = 0; i < BW::UNIT_ARRAY_MAX_LENGTH; ++i)
       {
-        Unit u = Broodwar->indexToUnit(i);
+        Unit u = i < (int)BroodwarImpl.unitArray.size() ? Broodwar->indexToUnit(i) : nullptr;
         int id = -1;
         if ( u )
           id = getUnitID(u);
@@ -645,9 +646,11 @@ namespace BWAPI
       const BW::unitFinder* bwyf = BW::BWDATA::UnitOrderingY.data();
       int bwSearchSize = BW::BWDATA::UnitOrderingCount;
 
-      for ( int i = 0; i < bwSearchSize; ++i, bwxf++, bwyf++ )
+      // scm-sim: the game's slots (BW/Layout.h); the protocol's lists hold 3,400 entries
+      const int scmsimSlots = (int)BroodwarImpl.unitArray.size();
+      for ( int i = 0; i < bwSearchSize && xf < data->xUnitSearch + BW::UNIT_ARRAY_MAX_LENGTH * 2 && yf < data->yUnitSearch + BW::UNIT_ARRAY_MAX_LENGTH * 2; ++i, bwxf++, bwyf++ )
       {
-        if (bwxf->unitIndex > 0 && bwxf->unitIndex <= BW::UNIT_ARRAY_MAX_LENGTH)
+        if (bwxf->unitIndex > 0 && bwxf->unitIndex <= scmsimSlots)
         {
           UnitImpl* u = BroodwarImpl.unitArray[bwxf->unitIndex-1];
           if ( u && u->canAccess() )
@@ -658,7 +661,7 @@ namespace BWAPI
           }
         } // x index
 
-        if (bwyf->unitIndex > 0 && bwyf->unitIndex <= BW::UNIT_ARRAY_MAX_LENGTH)
+        if (bwyf->unitIndex > 0 && bwyf->unitIndex <= scmsimSlots)
         {
           UnitImpl* u = BroodwarImpl.unitArray[bwyf->unitIndex-1];
           if ( u && u->canAccess() )
@@ -677,7 +680,7 @@ namespace BWAPI
 
       //dynamic bullet data
       for(int id = 0; id < 100; ++id)
-        data->bullets[id] = BroodwarImpl.getBulletFromIndex(id)->data;
+        if ( BroodwarImpl.getBulletFromIndex(id) ) data->bullets[id] = BroodwarImpl.getBulletFromIndex(id)->data; // scm-sim: the game's slots (BW/Layout.h)
       
       //dynamic nuke dot data
       int j = 0;

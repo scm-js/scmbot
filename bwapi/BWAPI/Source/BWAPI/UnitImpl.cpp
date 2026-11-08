@@ -134,7 +134,7 @@ namespace BWAPI
       return nullptr;
 
     int index = unit - BW::BWDATA::UnitNodeTable.data();
-    if (index > BW::UNIT_ARRAY_MAX_LENGTH)
+    if (index < 0 || index >= (int)BW::layout.unitSlots) // scm-sim: the game's slots (BW/Layout.h)
     {
       return nullptr;
     }

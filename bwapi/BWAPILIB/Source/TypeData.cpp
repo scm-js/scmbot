@@ -57,12 +57,16 @@ namespace BWAPI
           return rd(base + (uint32_t)(((id - first) * parts + part) * (int)size), size);
         }
       };
-      struct Shape { int parts, first; };
+      /// A column's values an id, the id its file starts at, and (a column of several values an id) the size of one value.
+      struct Shape { int parts, first, width = 0; };
 
       /**
        * A table through its pointer table (GPTP's `DatLoad`, 12 bytes a column in file order: address, size of a
        * value, number of values; ended by a zero address), as the game's table loader (0x4D2E80) reads it. A plugin
-       * that moves a column or widens it writes the new address and size there, so it is read where it is.
+       * that moves a column or widens it writes the new address and size there, so it is read where it is. A column of
+       * several values an id (a unit's extents, its placement box) is described one of two ways: 1.16.1's (the size of
+       * one value, as many values as there are parts in all) and GPTP's (the size of an id's record, one an id: its
+       * extents 8 bytes, 3,000 of them in Cosmonarchy); told apart by the size.
        */
       bool readTable(const char *name, uint32_t descriptor, const std::vector<Shape> &shape, std::vector<Col> &cols, int &entries, std::string &why)
       {
@@ -70,12 +74,15 @@ namespace BWAPI
         for ( size_t k = 0; k < shape.size(); ++k )
         {
           uint32_t e = descriptor + 12 * (uint32_t)k, base = rd(e, 4), size = rd(e + 4, 4), count = rd(e + 8, 4);
-          if ( !base || (size != 1 && size != 2 && size != 4) || !count || count > 0x1000000 || !readable(base, (uint64_t)size * count) )
+          bool record = shape[k].parts > 1 && shape[k].width && size == (uint32_t)(shape[k].parts * shape[k].width);
+          if ( !base || (!record && size != 1 && size != 2 && size != 4) || !count || count > 0x1000000 || !readable(base, (uint64_t)size * count) )
           {
             why = std::string(name) + ": the game's pointer table has no readable column " + std::to_string(k);
             return false;
           }
-          cols[k].base = base; cols[k].size = size; cols[k].values = count / shape[k].parts; cols[k].parts = shape[k].parts;
+          cols[k].base = base; cols[k].parts = shape[k].parts;
+          if ( record ) { cols[k].size = (uint32_t)shape[k].width; cols[k].values = count; }
+          else { cols[k].size = size; cols[k].values = count / shape[k].parts; }
         }
         entries = (int)cols[0].values;
         // A column with every id starts at 0; one of a range (the game's own layout) where its file says.
@@ -95,9 +102,9 @@ namespace BWAPI
       {
         std::vector<Shape> s(54, Shape{ 1, 0 });
         s[3] = { 1, 106 };   // infestation: the buildings only
-        s[36] = { 2, 0 };    // StarEdit's placement box: width, height
-        s[37] = { 2, 106 };  // add-on position: the buildings only
-        s[38] = { 4, 0 };    // extents: left, up, right, down
+        s[36] = { 2, 0, 2 };    // StarEdit's placement box: width, height
+        s[37] = { 2, 106, 2 };  // add-on position: the buildings only
+        s[38] = { 4, 0, 2 };    // extents: left, up, right, down
         return s;
       }
       namespace U { enum { Flingy = 0, Subunit1 = 1, ShieldEnabled = 6, Shields = 7, HitPoints = 8, GroundWeapon = 17, GroundHits = 18, AirWeapon = 19, AirHits = 20,

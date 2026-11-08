@@ -274,7 +274,9 @@ namespace BWAPI
       bool wantSelectionUpdate;
       bool startedClient;
 
-      std::array<UnitImpl*, BW::UNIT_ARRAY_MAX_LENGTH> unitArray;
+      // scm-sim: as many as the game's unit table has slots (BW/Layout.h; 1,700 in 1.16.1), made again at a match's
+      // start when a plugin moved it (`scmsimLayout`)
+      std::vector<UnitImpl*> unitArray;
       bool isTournamentCall = false;
 
       GameData* data = server.data;
@@ -319,7 +321,9 @@ namespace BWAPI
       Regionset regionsList;
       std::unordered_map<int, Region> regionMap;
 
-      std::array<BulletImpl*, BW::BULLET_ARRAY_MAX_LENGTH> bulletArray;
+      std::vector<BulletImpl*> bulletArray; // scm-sim: as many as the game's bullet table has slots (BW/Layout.h)
+      /// scm-sim: the game's tables read again (BW/Layout.h) and BWAPI's units and bullets made for them.
+      void scmsimLayout();
       std::vector<std::vector<Command>> commandBuffer;
 
       void updateUnits();

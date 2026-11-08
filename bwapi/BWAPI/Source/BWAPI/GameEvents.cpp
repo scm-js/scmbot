@@ -28,6 +28,8 @@ namespace BWAPI
     // scm-sim: the unit, weapon, upgrade and tech types from this game's tables (a mod's, a map's settings), before
     // anything of BWAPI's or the bot's asks them.
     TypeData::load();
+    // scm-sim: where the game keeps the tables BWAPI reads (a plugin may have moved them: BW/Layout.h)
+    this->scmsimLayout();
 #endif
     this->initializeData();
 
@@ -71,9 +73,9 @@ namespace BWAPI
       }
 
       // First check if player owns a unit at start
-      for (int u = 0; u < UnitTypes::None; ++u)
+      for (int u = 0; u < BW::layout.unitTypes; ++u) // scm-sim: every type of the game's, where its counts are (BW/Layout.h)
       {
-        if (BW::BWDATA::Game.unitCounts.all[u][i])
+        if (BW::layout.count(BW::layout.countsAll, u, i))
         {
           if (this->players[i])
             this->players[i]->setParticipating();

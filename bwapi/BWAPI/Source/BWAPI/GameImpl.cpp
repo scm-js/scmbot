@@ -73,8 +73,8 @@ namespace BWAPI
   {
     if ( !this->isFlagEnabled(Flag::CompleteMapInformation) )
       return nullptr;
-    int i = (unitIndex & 0x7FF);
-    if (i < BW::UNIT_ARRAY_MAX_LENGTH && this->unitArray[i]->canAccess())
+    int i = (unitIndex & BW::layout.slotMask()); // scm-sim: the game's slots (BW/Layout.h)
+    if (i < (int)this->unitArray.size() && this->unitArray[i]->canAccess())
       return this->unitArray[i];
     return nullptr;
   }
@@ -280,7 +280,8 @@ namespace BWAPI
   //--------------------------------------------- GET UNITS IN RECTANGLE -------------------------------------
   Unit GameImpl::_unitFromIndex(int index)
   {
-    return this->unitArray[index-1];
+    // scm-sim: a finder's slot past the table (an unused entry: 0) names no unit
+    return index >= 1 && index <= (int)this->unitArray.size() ? this->unitArray[index-1] : nullptr;
   }
   Unitset GameImpl::getUnitsInRectangle(int left, int top, int right, int bottom, const UnitFilter &pred) const
   {
