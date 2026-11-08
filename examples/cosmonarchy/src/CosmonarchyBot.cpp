@@ -55,7 +55,7 @@ public:
     for (Unit u : me->getUnits())
     {
       UnitType t = u->getType();
-      if (t == Worker && u->isCompleted()) workers.insert(u);
+      if (t.isWorker() && u->isCompleted()) workers.insert(u);   // (Masons; another race's workers mine too)
       else if (t == Hall && u->isCompleted()) hall = u;
       else if (t == Barracks) { ++stockades; if (u->isCompleted()) barracks.insert(u); else underway = true; }
       else if (t == Soldier && u->isCompleted()) soldiers.insert(u);
