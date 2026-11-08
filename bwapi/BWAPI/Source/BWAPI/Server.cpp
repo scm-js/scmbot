@@ -25,6 +25,17 @@
 
 namespace BWAPI
 {
+  // scm-sim: a unit's types as GameData (BWAPI 4.4's client protocol) carries them: 4.4's numbers for BWAPI's own
+  // sentinels, which moved above any table's width in this build (Client/PlayerData.h, Wire).
+  static void scmsimToWire(UnitData &d)
+  {
+    d.type = Wire::unitValue(d.type);
+    d.buildType = Wire::unitValue(d.buildType);
+    for ( int &t : d.trainingQueue ) t = Wire::unitValue(t);
+    d.tech = Wire::techValue(d.tech);
+    d.upgrade = Wire::upgradeValue(d.upgrade);
+  }
+
   const int PIPE_TIMEOUT = 3000;
   const int PIPE_SYSTEM_BUFFER_SIZE = 4096;
 
@@ -505,7 +516,10 @@ namespace BWAPI
   void Server::updateSharedMemory()
   {
     for (Unit u : BroodwarImpl.evadeUnits)
+    {
       data->units[getUnitID(u)] = static_cast<UnitImpl*>(u)->data;
+      scmsimToWire(data->units[getUnitID(u)]);
+    }
 
     data->frameCount              = Broodwar->getFrameCount();
     data->replayFrameCount        = Broodwar->getReplayFrameCount();
@@ -579,7 +593,7 @@ namespace BWAPI
           p->supplyTotal[j]  = p2->supplyTotal[j];
           p->supplyUsed[j]  = p2->supplyUsed[j];
         }
-        for(int j = 0; j < UnitTypes::Enum::MAX; ++j)
+        for(int j = 0; j < Wire::UNITS; ++j) // scm-sim: the protocol's width
         {
           p->allUnitCount[j]        = p2->allUnitCount[j];
           p->visibleUnitCount[j]    = p2->visibleUnitCount[j];
@@ -611,7 +625,10 @@ namespace BWAPI
 
       //dynamic unit data
       for(Unit i : Broodwar->getAllUnits())
+      {
         data->units[getUnitID(i)] = static_cast<UnitImpl*>(i)->data;
+        scmsimToWire(data->units[getUnitID(i)]);
+      }
 
       for(int i = 0; i < BW::UNIT_ARRAY_MAX_LENGTH; ++i)
       {

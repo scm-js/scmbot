@@ -404,19 +404,24 @@ namespace BWAPI
         static_cast<PlayerImpl*>(u->lastPlayer)->units.erase(u);
         static_cast<PlayerImpl*>(u->_getPlayer)->units.insert(u);
       }
-      int allUnits  = UnitTypes::AllUnits;
-      int men       = UnitTypes::Men;
-      int buildings = UnitTypes::Buildings;
-      int factories = UnitTypes::Factories;
-      int thisUnit  = u->_getType;
+      // scm-sim: the counts are filed by BWAPI 4.4's numbers (Client/PlayerData.h, Wire); a mod's type past 1.16.1's
+      // has no place there and counts only in the macro types.
+      int allUnits  = Wire::unitType(UnitTypes::AllUnits);
+      int men       = Wire::unitType(UnitTypes::Men);
+      int buildings = Wire::unitType(UnitTypes::Buildings);
+      int factories = Wire::unitType(UnitTypes::Factories);
+      int thisUnit  = Wire::unitType(u->_getType);
       
       // Increment specific unit count
       BWAPI::PlayerData *pSelf = static_cast<PlayerImpl*>(u->_getPlayer)->self;
+      if ( thisUnit >= 0 )
+      {
       pSelf->allUnitCount[thisUnit]++;
       if (u->isVisible())
         pSelf->visibleUnitCount[thisUnit]++;
       if (u->isCompleted())
         pSelf->completedUnitCount[thisUnit]++;
+      }
       // increment all unit count
       pSelf->allUnitCount[allUnits]++;
       if (u->isVisible())

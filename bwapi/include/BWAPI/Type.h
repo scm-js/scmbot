@@ -34,13 +34,32 @@ namespace BWAPI
     /// <summary>Type that maps names to their type values.</summary>
     typedef std::unordered_map<std::string,T> typeMapT;
     /// @endcond
+  public:
+#ifdef SCM_SIM
+    // scm-sim: the names go through three hooks, so that a type whose names come from the game's data at the start of
+    // a game (units, weapons, upgrades and techs: BWAPILIB/Source/TypeData.cpp) can answer for ids its table of
+    // names does not have. Every other type keeps its table (the generic definitions below the class).
+    /// <summary>The name of a type id (the unknown entry's for an id that has none).</summary>
+    static const std::string &nameOf(int id);
+    /// <summary>The ids `getType` looks names up among.</summary>
+    static std::deque<int> namedIds();
+    /// <summary>Changes when the names change (a game's data was read): `getType` builds its map again.</summary>
+    static int nameGeneration();
+#endif
   private:
     static typeMapT typeMapInit()
     {
+#ifdef SCM_SIM
+      typeMapT result(UnknownId+1 < 4096 ? UnknownId+1 : 4096);
+      for ( int i : namedIds() ) // include unknown
+      {
+        std::string n( nameOf(i) );
+#else
       typeMapT result(UnknownId+1);
       for ( int i = 0; i < UnknownId + 1; ++i ) // include unknown
       {
         std::string n( typeNames[i] );
+#endif
 
         // erase-remove idiom, eliminates spaces and underscores from the string
         n.erase( std::remove_if(n.begin(), n.end(), [](char const &c){ return isspace(c) || c == '_'; }), n.end() );
@@ -94,7 +113,11 @@ namespace BWAPI
     /// @returns Reference to std::string object containing the name.
     inline const std::string &getName() const
     {
+#ifdef SCM_SIM
+      return nameOf(this->tid);
+#else
       return typeNames[this->isValid() ? this->tid : UnknownId];
+#endif
     };
 
     /// @copydoc Type::getName
@@ -141,7 +164,17 @@ namespace BWAPI
     static T getType(std::string name)
     {
       // Mapping of strings to types
+#ifdef SCM_SIM
+      static typeMapT typeMap;
+      static int built = -1;
+      if ( built != nameGeneration() )
+      {
+        typeMap = typeMapInit();
+        built = nameGeneration();
+      }
+#else
       static const typeMapT typeMap( typeMapInit() );
+#endif
 
       // erase-remove idiom, eliminates spaces and underscores from the string to search
       name.erase( std::remove_if(name.begin(), name.end(), [](char const &c){ return isspace(c) || c == '_'; }), name.end() );
@@ -161,4 +194,25 @@ namespace BWAPI
     };
   };
 
+#ifdef SCM_SIM
+  // scm-sim: the generic hooks: the type's own table of names, every id up to and with the unknown one.
+  template<class T, int UnknownId>
+  const std::string &Type<T, UnknownId>::nameOf(int id)
+  {
+    return typeNames[id < 0 || id > UnknownId ? UnknownId : id];
+  }
+  template<class T, int UnknownId>
+  std::deque<int> Type<T, UnknownId>::namedIds()
+  {
+    std::deque<int> ids;
+    for ( int i = 0; i < UnknownId + 1; ++i )
+      ids.push_back(i);
+    return ids;
+  }
+  template<class T, int UnknownId>
+  int Type<T, UnknownId>::nameGeneration()
+  {
+    return 0;
+  }
+#endif
 }

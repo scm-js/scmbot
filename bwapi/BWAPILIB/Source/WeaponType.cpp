@@ -7,12 +7,18 @@
 #include <BWAPI/ExplosionType.h>
 
 #include <Debug.h>
+#include "TypeData.h"
 
 namespace BWAPI
 {
   // NAMES
+#ifdef SCM_SIM
+  // scm-sim: BWAPI 4.4's names, by its numbering (TypeData.h); the types the enum has keep them.
+  static const std::string typeNames44[TypeData::WEAPON44] =
+#else
   template <>
-  const std::string Type<WeaponType, WeaponTypes::Enum::Unknown>::typeNames[WeaponTypes::Enum::MAX] =
+  const std::string Type<WeaponType, WeaponTypes::Enum::Unknown>::typeNames[TypeData::WEAPON44] =
+#endif
   {
     "Gauss_Rifle",
     "Gauss_Rifle_Jim_Raynor",
@@ -149,7 +155,7 @@ namespace BWAPI
   };
 
   // DEFAULTS
-  const int defaultWpnDamageAmt[WeaponTypes::Enum::MAX] =
+  const int defaultWpnDamageAmt[TypeData::WEAPON44] =
   {
     6, 18, 10, 30, 20, 30, 125, 12, 10, 24, 20, 30, 70, 5, 0, 20, 8, 40, 16, 25, 25, 50, 50, 30, 30, 8, 16, 70,
     150, 20, 260, 600, 0, 0, 250, 5, 10, 50, 10, 20, 20, 50, 4, 5, 0, 30, 20, 40, 9, 18, 5, 10, 15, 40, 500, 110,
@@ -157,7 +163,7 @@ namespace BWAPI
     45, 7, 7, 7, 7, 7, 7, 7, 4, 30, 10, 10, 8, 10, 5, 0, 20, 6, 25, 8, 8, 8, 0, 20, 6, 40, 25, 25, 20, 28, 30, 6,
     6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 0
   };
-  const int defaultWpnDamageBonus[WeaponTypes::Enum::MAX] =
+  const int defaultWpnDamageBonus[TypeData::WEAPON44] =
   {
     1, 1, 1, 1, 2, 2, 0, 1, 2, 1, 1, 3, 3, 1, 0, 2, 1, 2, 1, 3, 3, 3, 3, 3, 3, 1, 1, 5, 5, 0, 0, 0, 0, 0, 0,
     1, 1, 1, 1, 1, 3, 3, 1, 0, 0, 1, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 1, 1,
@@ -165,10 +171,10 @@ namespace BWAPI
     1, 1, 1, 1, 2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0
   };
   // ACTUAL
-  int wpnDamageAmt[WeaponTypes::Enum::MAX], wpnDamageBonus[WeaponTypes::Enum::MAX];
+  int wpnDamageAmt[TypeData::WEAPON44], wpnDamageBonus[TypeData::WEAPON44];
 
 
-  const int wpnDamageCooldowns[WeaponTypes::Enum::MAX] =
+  const int wpnDamageCooldowns[TypeData::WEAPON44] =
   {
     15, 15, 22, 22, 30, 22, 22, 22, 22, 22, 22, 37, 37, 15, 15, 22, 30, 22, 30, 30, 30, 30, 30, 22, 22, 22, 22,
     75, 75, 15, 15, 1, 1, 1, 75, 8, 8, 15, 15, 15, 15, 15, 15, 22, 22, 22, 30, 30, 30, 30, 22, 22, 15, 32, 1, 1,
@@ -176,7 +182,7 @@ namespace BWAPI
     30, 22, 22, 22, 22, 22, 22, 22, 9, 22, 22, 22, 22, 22, 8, 22, 22, 64, 100, 22, 22, 22, 1, 37, 15, 30, 22, 22,
     30, 22, 22, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 0, 0
   };
-  const int wpnDamageFactor[WeaponTypes::Enum::MAX] =
+  const int wpnDamageFactor[TypeData::WEAPON44] =
   {
     1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
@@ -184,14 +190,14 @@ namespace BWAPI
     1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0
   };
 
-  const int wpnMinRange[WeaponTypes::Enum::MAX] =
+  const int wpnMinRange[TypeData::WEAPON44] =
   {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 64, 0, 0, 0, 0, 0, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
   };
-  const int wpnMaxRange[WeaponTypes::Enum::MAX] =
+  const int wpnMaxRange[TypeData::WEAPON44] =
   {
     128, 160, 224, 192, 160, 160, 10, 192, 160, 160, 160, 224, 224, 10, 10, 160, 160, 160, 160, 192, 192, 192, 192,
     192, 192, 32, 32, 384, 384, 224, 320, 3, 256, 256, 288, 15, 15, 15, 128, 160, 25, 25, 2, 32, 128, 64, 256, 256,
@@ -200,21 +206,21 @@ namespace BWAPI
     160, 160, 64, 160, 160, 288, 192, 192, 192, 256, 320, 288, 320, 192, 128, 15, 192, 192, 128, 128, 192, 128, 128,
     128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 0, 0
   };
-  const int wpnSplashRangeInner[WeaponTypes::Enum::MAX] =
+  const int wpnSplashRangeInner[TypeData::WEAPON44] =
   {
     0, 0, 0, 0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 15, 10, 10, 0, 0, 128, 0, 64, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 10, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 0, 5, 0, 0, 5, 0, 0, 0, 0, 0, 
     20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
   };
-  const int wpnSplashRangeMid[WeaponTypes::Enum::MAX] =
+  const int wpnSplashRangeMid[TypeData::WEAPON44] =
   {
     0, 0, 0, 0, 0, 0, 75, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 20, 25, 25, 0, 0, 192, 0, 64, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 20, 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 15, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 40, 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 50, 0, 0, 50, 0, 0, 0, 0, 0, 20, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
   };
-  const int wpnSplashRangeOuter[WeaponTypes::Enum::MAX] =
+  const int wpnSplashRangeOuter[TypeData::WEAPON44] =
   {
     0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 25, 40, 40, 0, 0, 256, 0, 64, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 30, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 30, 0, 0, 0, 
@@ -232,7 +238,7 @@ namespace BWAPI
 #define TARG_ORGMECH  0x80
 #define TARG_OWN      0x100
 
-  const int wpnFlags[WeaponTypes::Enum::MAX] =
+  const int wpnFlags[TypeData::WEAPON44] =
   {
     TARG_AIR | TARG_GROUND,
     TARG_AIR | TARG_GROUND,
@@ -371,7 +377,7 @@ namespace BWAPI
   namespace wpnInternalUpgrades
   {
     using namespace UpgradeTypes::Enum;
-    const UpgradeType upgrade[WeaponTypes::Enum::MAX] =
+    const UpgradeType upgrade[TypeData::WEAPON44] =
     {
       Terran_Infantry_Weapons, Terran_Infantry_Weapons, Terran_Infantry_Weapons, Terran_Infantry_Weapons, Terran_Vehicle_Weapons, 
       Terran_Vehicle_Weapons, Upgrade_60, Terran_Vehicle_Weapons, Terran_Vehicle_Weapons, Terran_Vehicle_Weapons, Terran_Vehicle_Weapons, 
@@ -398,7 +404,7 @@ namespace BWAPI
   namespace wpnInternalDamageType
   {
     using namespace DamageTypes::Enum;
-    const DamageType damageType[WeaponTypes::Enum::MAX] =
+    const DamageType damageType[TypeData::WEAPON44] =
     {
       Normal, Normal, Concussive, Concussive, Concussive, Concussive, Explosive, Normal, Explosive, Normal, Explosive, Explosive,
       Explosive, Normal, Normal, Explosive, Normal, Explosive, Normal, Normal, Normal, Normal, Normal, Normal, Normal, Concussive,
@@ -415,7 +421,7 @@ namespace BWAPI
   namespace wpnInternalExplosionType
   {
     using namespace ExplosionTypes::Enum;
-    const ExplosionType explosionType[WeaponTypes::Enum::MAX] =
+    const ExplosionType explosionType[TypeData::WEAPON44] =
     {
       Normal, Normal, Normal, Normal, Normal, Normal, Radial_Splash, Normal, Normal, Normal, Normal, Normal, Normal, Normal, None, 
       Normal, Normal, Normal, Normal, Normal, Normal, Normal, Normal, Normal, Normal, Enemy_Splash, Enemy_Splash, Radial_Splash, 
@@ -432,7 +438,7 @@ namespace BWAPI
   namespace wpnInternalWhatUses
   {
     using namespace UnitTypes::Enum;
-    const UnitType whatUses[WeaponTypes::Enum::MAX] =
+    const UnitType whatUses[TypeData::WEAPON44] =
     {
       Terran_Marine, Hero_Jim_Raynor_Marine, Terran_Ghost, Hero_Sarah_Kerrigan, Terran_Vulture, Hero_Jim_Raynor_Vulture,
       Terran_Vulture_Spider_Mine, Terran_Goliath, Terran_Goliath, Hero_Alan_Schezar, Hero_Alan_Schezar, Terran_Siege_Tank_Tank_Mode,
@@ -499,7 +505,7 @@ namespace BWAPI
   namespace wpnInternalTechs
   {
       using namespace TechTypes::Enum;
-      const TechType attachedTech[WeaponTypes::Enum::MAX] = 
+      const TechType attachedTech[TypeData::WEAPON44] = 
       {
         // Terran
         None, None, None, None, None, None, Spider_Mines, None, None, None, None, None, None, None, None, None, None, None, None,
@@ -518,108 +524,157 @@ namespace BWAPI
       };
   }
 
+  // scm-sim: each answer is the game's data once a game's tables were read (TypeData.h), else BWAPI 4.4's own table,
+  // whose row for an id is TypeData::weaponRow44 (a mod's weapon past 1.16.1's reads Unknown's).
+  using TypeData::weaponRow44;
+#define SCM_WEAPON(field, table) do { if ( auto r = TypeData::weapon(this->getID()) ) return r->field; return table[weaponRow44(this->getID())]; } while (0)
+  static int weaponFlagsOf(int id)
+  {
+    if ( auto r = TypeData::weapon(id) )
+      return r->flags;
+    return wpnFlags[weaponRow44(id)];
+  }
+
   TechType WeaponType::getTech() const
   {
-    return wpnInternalTechs::attachedTech[this->getID()];
+    return wpnInternalTechs::attachedTech[weaponRow44(this->getID())];
   }
   UnitType WeaponType::whatUses() const
   {
-    return wpnInternalWhatUses::whatUses[this->getID()];
+    SCM_WEAPON(whatUses, wpnInternalWhatUses::whatUses);
   }
   int WeaponType::damageAmount() const
   {
-    return defaultWpnDamageAmt[this->getID()];
+    SCM_WEAPON(damage, defaultWpnDamageAmt);
   }
   int WeaponType::damageBonus() const
   {
-    return defaultWpnDamageBonus[this->getID()];
+    SCM_WEAPON(bonus, defaultWpnDamageBonus);
   }
   int WeaponType::damageCooldown() const
   {
-    return wpnDamageCooldowns[this->getID()];
+    SCM_WEAPON(cooldown, wpnDamageCooldowns);
   }
   int WeaponType::damageFactor() const
   {
-    return wpnDamageFactor[this->getID()];
+    SCM_WEAPON(factor, wpnDamageFactor);
   }
   UpgradeType WeaponType::upgradeType() const
   {
-    return wpnInternalUpgrades::upgrade[this->getID()];
+    if ( auto r = TypeData::weapon(this->getID()) )
+      return UpgradeType(r->upgrade);
+    return wpnInternalUpgrades::upgrade[weaponRow44(this->getID())];
   }
   DamageType WeaponType::damageType() const
   {
-    return wpnInternalDamageType::damageType[this->getID()];
+    if ( auto r = TypeData::weapon(this->getID()) )
+      return DamageType(r->damageType);
+    return wpnInternalDamageType::damageType[weaponRow44(this->getID())];
   }
   ExplosionType WeaponType::explosionType() const
   {
-    return wpnInternalExplosionType::explosionType[this->getID()];
+    if ( auto r = TypeData::weapon(this->getID()) )
+      return ExplosionType(r->explosion);
+    return wpnInternalExplosionType::explosionType[weaponRow44(this->getID())];
   }
   int WeaponType::minRange() const
   {
-    return wpnMinRange[this->getID()];
+    SCM_WEAPON(minRange, wpnMinRange);
   }
   int WeaponType::maxRange() const
   {
-    return wpnMaxRange[this->getID()];
+    SCM_WEAPON(maxRange, wpnMaxRange);
   }
   int WeaponType::innerSplashRadius() const
   {
-    return wpnSplashRangeInner[this->getID()];
+    SCM_WEAPON(inner, wpnSplashRangeInner);
   }
   int WeaponType::medianSplashRadius() const
   {
-    return wpnSplashRangeMid[this->getID()];
+    SCM_WEAPON(median, wpnSplashRangeMid);
   }
   int WeaponType::outerSplashRadius() const
   {
-    return wpnSplashRangeOuter[this->getID()];
+    SCM_WEAPON(outer, wpnSplashRangeOuter);
   }
   bool WeaponType::targetsAir() const
   {
-    return !!(wpnFlags[this->getID()] & TARG_AIR);
+    return !!(weaponFlagsOf(this->getID()) & TARG_AIR);
   }
   bool WeaponType::targetsGround() const
   {
-    return !!(wpnFlags[this->getID()] & TARG_GROUND);
+    return !!(weaponFlagsOf(this->getID()) & TARG_GROUND);
   }
   bool WeaponType::targetsMechanical() const
   {
-    return !!(wpnFlags[this->getID()] & TARG_MECH);
+    return !!(weaponFlagsOf(this->getID()) & TARG_MECH);
   }
   bool WeaponType::targetsOrganic() const
   {
-    return !!(wpnFlags[this->getID()] & TARG_ORGANIC);
+    return !!(weaponFlagsOf(this->getID()) & TARG_ORGANIC);
   }
   bool WeaponType::targetsNonBuilding() const
   {
-    return !!(wpnFlags[this->getID()] & TARG_NOBUILD);
+    return !!(weaponFlagsOf(this->getID()) & TARG_NOBUILD);
   }
   bool WeaponType::targetsNonRobotic() const
   {
-    return !!(wpnFlags[this->getID()] & TARG_NOROBOT);
+    return !!(weaponFlagsOf(this->getID()) & TARG_NOROBOT);
   }
   bool WeaponType::targetsTerrain() const
   {
-    return !!(wpnFlags[this->getID()] & TARG_TERRAIN);
+    return !!(weaponFlagsOf(this->getID()) & TARG_TERRAIN);
   }
   bool WeaponType::targetsOrgOrMech() const
   {
-    return !!(wpnFlags[this->getID()] & TARG_ORGMECH);
+    return !!(weaponFlagsOf(this->getID()) & TARG_ORGMECH);
   }
   bool WeaponType::targetsOwn() const
   {
-    return !!(wpnFlags[this->getID()] & TARG_OWN);
+    return !!(weaponFlagsOf(this->getID()) & TARG_OWN);
   }
   const WeaponType::set& WeaponTypes::allWeaponTypes()
   {
+    if ( TypeData::use )
+      return TypeData::game.allWeapons;
     return WeaponTypesSet::weaponTypeSet;
   }
   const WeaponType::set& WeaponTypes::normalWeaponTypes()
   {
+    if ( TypeData::use )
+      return TypeData::game.normalWeapons;
     return WeaponTypesSet::normalWeaponTypeSet;
   }
   const WeaponType::set& WeaponTypes::specialWeaponTypes()
   {
+    if ( TypeData::use )
+      return TypeData::game.specialWeapons;
     return WeaponTypesSet::specialWeaponTypeSet;
+  }
+#undef SCM_WEAPON
+
+  // scm-sim: BWAPI 4.4's answers that the game's rows start from (TypeData.cpp), and the names.
+  UnitType TypeData::bwapiWeaponWhatUses(int id44) { return wpnInternalWhatUses::whatUses[id44]; }
+
+  template<> const std::string &Type<WeaponType, WeaponTypes::Enum::Unknown>::nameOf(int id)
+  {
+    int i = TypeData::weapon44(id);
+    if ( i >= 0 ) return typeNames44[i];
+    if ( auto r = TypeData::weapon(id) ) return r->name;
+    return typeNames44[TypeData::WEAPON44 - 1];
+  }
+  template<> std::deque<int> Type<WeaponType, WeaponTypes::Enum::Unknown>::namedIds()
+  {
+    std::deque<int> ids;
+    for ( int i = 0; i <= WeaponTypes::Enum::None; ++i ) ids.push_back(i);
+    ids.push_back(WeaponTypes::Enum::Unknown);
+    if ( TypeData::use )
+      for ( int i = WeaponTypes::Enum::None + 1; i < (int)TypeData::game.weapons.size(); ++i )
+        if ( !TypeData::game.weapons[i].name.empty() ) ids.push_back(i);
+    return ids;
+  }
+  template<> int Type<WeaponType, WeaponTypes::Enum::Unknown>::nameGeneration()
+  {
+    return TypeData::game.generation * 2 + (TypeData::use ? 1 : 0);
   }
 }

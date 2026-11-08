@@ -134,7 +134,13 @@ namespace BWAPI
         C_10_Canister_Rifle_Alexei_Stukov = 116,
     
         None = 130,
+#ifdef SCM_SIM
+        // scm-sim: weapons come from the game's data, which may be wider than 1.16.1's 130 (a mod's). None stays 130,
+        // the game's own "no weapon" (a wide weapons table keeps it free); Unknown moves above any width. See UnitType.h.
+        Unknown = 0xFFFF,
+#else
         Unknown,
+#endif
         MAX
       };
     }
@@ -437,4 +443,9 @@ namespace BWAPI
   }
 
   static_assert(sizeof(WeaponType) == sizeof(int), "Expected type to resolve to primitive size.");
+#ifdef SCM_SIM
+  template<> const std::string &Type<WeaponType, WeaponTypes::Enum::Unknown>::nameOf(int id);
+  template<> std::deque<int> Type<WeaponType, WeaponTypes::Enum::Unknown>::namedIds();
+  template<> int Type<WeaponType, WeaponTypes::Enum::Unknown>::nameGeneration();
+#endif
 }

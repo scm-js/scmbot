@@ -88,27 +88,27 @@ namespace BWAPI
   //--------------------------------------------- ALL UNIT COUNT ---------------------------------------------
   int PlayerImpl::allUnitCount(UnitType unit) const
   {
-    return (unit >= 0 && unit < UnitTypes::Enum::MAX) ? self->allUnitCount[unit] : 0;
+    return Wire::unitType(unit) >= 0 ? self->allUnitCount[Wire::unitType(unit)] : 0; // scm-sim: 4.4's numbering (PlayerData.h)
   }
   //--------------------------------------------- VISIBLE UNIT COUNT -----------------------------------------
   int PlayerImpl::visibleUnitCount(UnitType unit) const
   {
-    return (unit >= 0 && unit < UnitTypes::Enum::MAX) ? self->visibleUnitCount[unit] : 0;
+    return Wire::unitType(unit) >= 0 ? self->visibleUnitCount[Wire::unitType(unit)] : 0; // scm-sim: 4.4's numbering (PlayerData.h)
   }
   //--------------------------------------------- COMPLETED UNIT COUNT ---------------------------------------
   int PlayerImpl::completedUnitCount(UnitType unit) const
   {
-    return (unit >= 0 && unit < UnitTypes::Enum::MAX) ? self->completedUnitCount[unit] : 0;
+    return Wire::unitType(unit) >= 0 ? self->completedUnitCount[Wire::unitType(unit)] : 0; // scm-sim: 4.4's numbering (PlayerData.h)
   }
   //--------------------------------------------- DEAD UNIT COUNT --------------------------------------------
   int PlayerImpl::deadUnitCount(UnitType unit) const
   {
-    return (unit >= 0 && unit < UnitTypes::Enum::MAX) ? self->deadUnitCount[unit] : 0;
+    return Wire::unitType(unit) >= 0 ? self->deadUnitCount[Wire::unitType(unit)] : 0; // scm-sim: 4.4's numbering (PlayerData.h)
   }
   //--------------------------------------------- KILLED UNIT COUNT ------------------------------------------
   int PlayerImpl::killedUnitCount(UnitType unit) const
   {
-    return (unit >= 0 && unit < UnitTypes::Enum::MAX) ? self->killedUnitCount[unit] : 0;
+    return Wire::unitType(unit) >= 0 ? self->killedUnitCount[Wire::unitType(unit)] : 0; // scm-sim: 4.4's numbering (PlayerData.h)
   }
   //--------------------------------------------------- SCORE ------------------------------------------------
   int PlayerImpl::getUnitScore() const
@@ -134,22 +134,22 @@ namespace BWAPI
   //--------------------------------------------- GET UPGRADE LEVEL ------------------------------------------
   int PlayerImpl::getUpgradeLevel(UpgradeType upgrade) const
   {
-    return upgrade.isValid() ? self->upgradeLevel[upgrade] : 0;
+    return Wire::upgradeType(upgrade) >= 0 ? self->upgradeLevel[Wire::upgradeType(upgrade)] : 0; // scm-sim: 4.4's numbering
   }
   //--------------------------------------------- HAS RESEARCHED ---------------------------------------------
   bool PlayerImpl::hasResearched(TechType tech) const
   {
-    return tech.isValid() ? self->hasResearched[tech] : false;
+    return Wire::techType(tech) >= 0 ? self->hasResearched[Wire::techType(tech)] : false; // scm-sim: 4.4's numbering
   }
   //--------------------------------------------- IS RESEARCHING ---------------------------------------------
   bool PlayerImpl::isResearching(TechType tech) const
   {
-    return tech.isValid() ? self->isResearching[tech] : false;
+    return Wire::techType(tech) >= 0 ? self->isResearching[Wire::techType(tech)] : false; // scm-sim: 4.4's numbering
   }
   //--------------------------------------------- IS UPGRADING -----------------------------------------------
   bool PlayerImpl::isUpgrading(UpgradeType upgrade) const
   {
-    return upgrade.isValid() ? self->isUpgrading[upgrade] : false;
+    return Wire::upgradeType(upgrade) >= 0 ? self->isUpgrading[Wire::upgradeType(upgrade)] : false; // scm-sim: 4.4's numbering
   }
   //-------------------------------------------------- COLOUR ------------------------------------------------
   BWAPI::Color PlayerImpl::getColor() const
@@ -164,15 +164,15 @@ namespace BWAPI
   //------------------------------------------------ AVAILABILITY --------------------------------------------
   int PlayerImpl::getMaxUpgradeLevel(UpgradeType upgrade) const
   {
-    return upgrade.isValid() ? self->maxUpgradeLevel[upgrade] : 0;
+    return Wire::upgradeType(upgrade) >= 0 ? self->maxUpgradeLevel[Wire::upgradeType(upgrade)] : 0; // scm-sim: 4.4's numbering
   }
   bool PlayerImpl::isResearchAvailable(TechType tech) const
   {
-    return tech.isValid() ? self->isResearchAvailable[tech] : false;
+    return Wire::techType(tech) >= 0 ? self->isResearchAvailable[Wire::techType(tech)] : false; // scm-sim: 4.4's numbering
   }
   bool PlayerImpl::isUnitAvailable(UnitType unit) const
   {
-    return unit.isValid() ? self->isUnitAvailable[unit] : false;
+    return Wire::unitType(unit) >= 0 ? self->isUnitAvailable[Wire::unitType(unit)] : false; // scm-sim: 4.4's numbering
   }
   //--------------------------------------------- LEFT GAME --------------------------------------------------
   bool PlayerImpl::leftGame() const

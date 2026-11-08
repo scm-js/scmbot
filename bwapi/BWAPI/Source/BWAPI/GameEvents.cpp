@@ -16,10 +16,19 @@
 
 namespace BWAPI
 {
+#ifdef SCM_SIM
+  // scm-sim: the types read from the game's tables (BWAPILIB/Source/TypeData.cpp).
+  namespace TypeData { std::string load(); }
+#endif
   //--------------------------------------------- ON GAME START ----------------------------------------------
   void GameImpl::onGameStart()
   {
     // This function is called at the start of every match
+#ifdef SCM_SIM
+    // scm-sim: the unit, weapon, upgrade and tech types from this game's tables (a mod's, a map's settings), before
+    // anything of BWAPI's or the bot's asks them.
+    TypeData::load();
+#endif
     this->initializeData();
 
     // Set the speed override

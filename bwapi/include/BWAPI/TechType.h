@@ -58,7 +58,13 @@ namespace BWAPI
         Healing,
 
         None = 44,
+#ifdef SCM_SIM
+        // scm-sim: techs come from the game's data, which may be wider than 1.16.1's 44 (a mod's). None stays 44, the
+        // game's own "no tech"; BWAPI's own Nuclear_Strike and Unknown move above any width. See UnitType.h.
+        Nuclear_Strike = 0xFFFE,
+#else
         Nuclear_Strike,
+#endif
         Unknown,
         MAX
       };
@@ -211,4 +217,9 @@ namespace BWAPI
   };
 
   static_assert(sizeof(TechType) == sizeof(int), "Expected type to resolve to primitive size.");
+#ifdef SCM_SIM
+  template<> const std::string &Type<TechType, TechTypes::Enum::Unknown>::nameOf(int id);
+  template<> std::deque<int> Type<TechType, TechTypes::Enum::Unknown>::namedIds();
+  template<> int Type<TechType, TechTypes::Enum::Unknown>::nameGeneration();
+#endif
 }

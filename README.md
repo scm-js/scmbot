@@ -134,6 +134,34 @@ What the bot writes to `bwapi-data/write/` during a game is kept by the page and
 `bwapi-data/read/` at the start of the next, as the tournaments do: a file up to 1 MB, 8 MB a bot.
 **Options → Community bots → Forget** clears it.
 
+## Types from the game, and mods
+
+BWAPI 4.4 knows the unit, weapon, upgrade and tech types from tables written into its source for
+StarCraft 1.16.1. Here BWAPI reads them from the game when the match starts instead: the game's
+own tables (a mod's `units.dat`, `weapons.dat`, `flingy.dat`, `upgrades.dat` and `techdata.dat`,
+and a map's unit settings), the requirement lists the game checks, and its names. On a mod that
+makes an SCV cost 65 minerals, `UnitTypes::Terran_SCV.mineralPrice()` is 65 and `canTrain` waits
+for 65. On the game's own data a few answers change from BWAPI 4.4's, where its tables were wrong:
+mostly speeds it rounded, the ranges at which units start to attack, and which upgrades apply to
+which unit.
+
+What the game's code decides by type rather than by its tables stays BWAPI's: which unit is a
+refinery or a critter, which tech cloaks which unit, a spell's order, the speed of a unit its
+animation moves. The types BWAPI's enum names keep their names (`Terran_Marine`) whatever a mod
+calls them.
+
+A mod may have more types than 1.16.1's 228 units, so `UnitType(494)` can be a real type, and
+`UnitTypes::allUnitTypes()` lists the mod's. To make room, BWAPI's own markers moved to the top
+of the 16-bit range: `UnitTypes::AllUnits`, `Men`, `Buildings`, `Factories` and `Unknown` are
+65531–65535, `WeaponTypes::Unknown`, `UpgradeTypes::Unknown` and `TechTypes::Unknown` 65535, and
+`TechTypes::Nuclear_Strike` 65534. `None` stays where the game has it (unit 228, weapon 130,
+upgrade 61, tech 44). A bot that uses the names needs only a rebuild; one that wrote the numbers
+(`UnitType(233)`) should use the names.
+
+**Rebuild your bot.** A `.scmbot` made before this (its header says `scmbot 1 (BWAPI 4.4.0)`)
+still plays, with 1.16.1's types written in. Run `docker pull ghcr.io/scm-js/scmbot` and
+`scmbot build` again for the types from the game.
+
 ## What is different from Windows
 
 - One BWAPI bot a game: every build puts its memory at the same place.

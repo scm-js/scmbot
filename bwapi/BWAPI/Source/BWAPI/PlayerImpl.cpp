@@ -162,7 +162,7 @@ namespace BWAPI
         {
           for(UnitType t : UpgradeType(i).whatUses())
           {
-            if ( self->completedUnitCount[t] > 0 )
+            if ( Wire::unitType(t) >= 0 && self->completedUnitCount[Wire::unitType(t)] > 0 ) // scm-sim: 4.4's numbering
               self->upgradeLevel[i] = BW::BWDATA::Game.currentUpgradeLevelSC[index][i];
           }
         }
@@ -170,7 +170,7 @@ namespace BWAPI
         {
           for(UnitType t : UpgradeType(i).whatUses())
           {
-            if ( self->completedUnitCount[t] > 0 )
+            if ( Wire::unitType(t) >= 0 && self->completedUnitCount[Wire::unitType(t)] > 0 ) // scm-sim: 4.4's numbering
               self->upgradeLevel[i] = BW::BWDATA::Game.currentUpgradeLevelBW[index][i - 46];
           }
         }
@@ -225,7 +225,7 @@ namespace BWAPI
       for (int i = 0; i < BW::UNIT_TYPE_COUNT; ++i)
         self->isUnitAvailable[i] = !!BW::BWDATA::Game.unitAvailability[index][i];
 
-      self->hasResearched[TechTypes::Enum::Nuclear_Strike] = self->isUnitAvailable[UnitTypes::Enum::Terran_Nuclear_Missile];
+      self->hasResearched[Wire::techType(TechTypes::Enum::Nuclear_Strike)] = self->isUnitAvailable[UnitTypes::Enum::Terran_Nuclear_Missile];
     }
 
     // Get Scores, supply
@@ -262,16 +262,16 @@ namespace BWAPI
         self->killedUnitCount[i] = BW::BWDATA::Game.unitCounts.killed[i][index];
       }
       // set macro dead unit counts
-      self->deadUnitCount[UnitTypes::AllUnits]    = BW::BWDATA::Game.allUnitsLost[index] + BW::BWDATA::Game.allBuildingsLost[index];
-      self->deadUnitCount[UnitTypes::Men]         = BW::BWDATA::Game.allUnitsLost[index];
-      self->deadUnitCount[UnitTypes::Buildings]   = BW::BWDATA::Game.allBuildingsLost[index];
-      self->deadUnitCount[UnitTypes::Factories]   = BW::BWDATA::Game.allFactoriesLost[index];
+      self->deadUnitCount[Wire::unitType(UnitTypes::AllUnits)]    = BW::BWDATA::Game.allUnitsLost[index] + BW::BWDATA::Game.allBuildingsLost[index];
+      self->deadUnitCount[Wire::unitType(UnitTypes::Men)]         = BW::BWDATA::Game.allUnitsLost[index];
+      self->deadUnitCount[Wire::unitType(UnitTypes::Buildings)]   = BW::BWDATA::Game.allBuildingsLost[index];
+      self->deadUnitCount[Wire::unitType(UnitTypes::Factories)]   = BW::BWDATA::Game.allFactoriesLost[index];
 
       // set macro kill unit counts
-      self->killedUnitCount[UnitTypes::AllUnits]  = BW::BWDATA::Game.allUnitsKilled[index] + BW::BWDATA::Game.allBuildingsRazed[index];
-      self->killedUnitCount[UnitTypes::Men]       = BW::BWDATA::Game.allUnitsKilled[index];
-      self->killedUnitCount[UnitTypes::Buildings] = BW::BWDATA::Game.allBuildingsRazed[index];
-      self->killedUnitCount[UnitTypes::Factories] = BW::BWDATA::Game.allFactoriesRazed[index];
+      self->killedUnitCount[Wire::unitType(UnitTypes::AllUnits)]  = BW::BWDATA::Game.allUnitsKilled[index] + BW::BWDATA::Game.allBuildingsRazed[index];
+      self->killedUnitCount[Wire::unitType(UnitTypes::Men)]       = BW::BWDATA::Game.allUnitsKilled[index];
+      self->killedUnitCount[Wire::unitType(UnitTypes::Buildings)] = BW::BWDATA::Game.allBuildingsRazed[index];
+      self->killedUnitCount[Wire::unitType(UnitTypes::Factories)] = BW::BWDATA::Game.allFactoriesRazed[index];
       
       // set score counts
       self->totalUnitScore      = BW::BWDATA::Game.allUnitScore[index];

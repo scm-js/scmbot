@@ -165,6 +165,17 @@ namespace BWAPI
   }
 }
 
+// The types from the game's data (BWAPILIB/Source/TypeData.cpp): the names a mod's data set gives, and the check.
+namespace BWAPI
+{
+  namespace TypeData
+  {
+    void setUnitNames(const std::vector<std::string> &names);
+    std::string dump();
+    const std::string &status();
+  }
+}
+
 // A call into the game the page makes for BWAPI (`Module.scm.call`): it runs the game's routine at that address.
 namespace BWAPI
 {
@@ -259,4 +270,27 @@ extern "C"
   EMSCRIPTEN_KEEPALIVE int scm_bwapi_match_ended() { return BWAPI::BroodwarImpl.scmsimMatchEnded() ? 1 : 0; }
   /** The game is over and left (Detours' _SNetLeaveGame / the end of the match). */
   EMSCRIPTEN_KEEPALIVE void scm_bwapi_end() { BWAPI::BroodwarImpl.onGameEnd(); }
+  /** The names of the data set's unit types, one a line, by type id (a mod's `rez\unitnames.tbl`): BWAPI names the
+   *  types past 1.16.1's by them. Before the first frame (the game's tables are read at the start of the match). */
+  EMSCRIPTEN_KEEPALIVE void scm_bwapi_unit_names(const char *lines)
+  {
+    std::vector<std::string> names;
+    std::string s(lines ? lines : "");
+    size_t at = 0;
+    while (at <= s.size())
+    {
+      size_t end = s.find('\n', at); if (end == std::string::npos) end = s.size();
+      names.push_back(s.substr(at, end - at)); at = end + 1;
+    }
+    BWAPI::TypeData::setUnitNames(names);
+  }
+  /** What the types were read from, in words (after the first frame). */
+  EMSCRIPTEN_KEEPALIVE const char *scm_bwapi_types_status() { return BWAPI::TypeData::status().c_str(); }
+  /** Every type BWAPI 4.4 knew, by its own tables and by the game's data, as JSON (the vanilla check). */
+  EMSCRIPTEN_KEEPALIVE const char *scm_bwapi_types_json()
+  {
+    static std::string json;
+    json = BWAPI::TypeData::dump();
+    return json.c_str();
+  }
 }

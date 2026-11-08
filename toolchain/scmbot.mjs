@@ -30,7 +30,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HOME = process.env.SCMBOT_HOME || dirname(dirname(fileURLToPath(import.meta.url)));   // native/ (or /scmbot in the image)
 const OBJ = process.env.SCMBOT_OBJ || join(HOME, "out/obj/toolchain");
-export const TOOLCHAIN = "scmbot 1 (BWAPI 4.4.0)";
+/** What a bundle says built it. 2: BWAPI's types are read from the game's tables at the start of a match (a mod's too); a bundle of 1 has 1.16.1's written in. */
+export const TOOLCHAIN = "scmbot 2 (BWAPI 4.4.0, types from the game's data)";
 /** How the person types this, for the messages that say what to run next (`scmjs bot` passes its own name). */
 const CMD = process.env.SCMBOT_COMMAND || "scmbot";
 const FORMAT = 1;
@@ -56,7 +57,7 @@ function linkFlags(memoryMB) {
   return ["-O2", "-fexceptions",
     "-sIMPORTED_MEMORY=1", `-sINITIAL_MEMORY=${memoryMB}MB`, "-sALLOW_MEMORY_GROWTH=0", "-sGLOBAL_BASE=1073741824", "-sSTACK_SIZE=8MB",
     "-sMODULARIZE=1", "-sEXPORT_ES6=1", "-sEXPORT_NAME=BwapiModule", "-sENVIRONMENT=node,web,worker",
-    "-sEXPORTED_FUNCTIONS=_scm_bwapi_config,_scm_bwapi_frame,_scm_bwapi_end,_scm_bwapi_map_file,_scm_bwapi_turn_sent,_scm_bwapi_lobby_races,_scm_bwapi_connect,_scm_bwapi_capture,_scm_bwapi_multiplayer,_scm_bwapi_shared,_scm_bwapi_match_ended,_scm_bwapi_gamedata,_scm_bwapi_gamedata_size,_malloc,_free",
+    "-sEXPORTED_FUNCTIONS=_scm_bwapi_config,_scm_bwapi_frame,_scm_bwapi_end,_scm_bwapi_map_file,_scm_bwapi_turn_sent,_scm_bwapi_lobby_races,_scm_bwapi_connect,_scm_bwapi_capture,_scm_bwapi_multiplayer,_scm_bwapi_shared,_scm_bwapi_match_ended,_scm_bwapi_gamedata,_scm_bwapi_gamedata_size,_scm_bwapi_unit_names,_scm_bwapi_types_status,_scm_bwapi_types_json,_malloc,_free",
     "-sEXPORTED_RUNTIME_METHODS=stringToNewUTF8,UTF8ToString,FS,HEAPU8", "-sFORCE_FILESYSTEM=1"];
 }
 
