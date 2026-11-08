@@ -19,7 +19,7 @@ namespace BW
   PositionUnitTarget::PositionUnitTarget(const UnitTarget& target)
       : target(target)
   {
-    int index = (target.getTarget() & 0x7FF) - 1;
+    int index = (target.getTarget() & layout.slotMask()) - 1; // scm-sim: the game's id (Layout.h)
     CUnit* unit = &BWDATA::UnitNodeTable[index];
     this->position = unit->position;
   }

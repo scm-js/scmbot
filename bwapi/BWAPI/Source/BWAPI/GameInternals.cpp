@@ -40,15 +40,34 @@ namespace BWAPI
     for (u8 i = 0; i < BW::PLAYER_COUNT; ++i)
       players[i] = new PlayerImpl(i);
 
-    // iterate through units and create UnitImpl for each
-    for (u16 i = 0; i < BW::UNIT_ARRAY_MAX_LENGTH; ++i)
-      unitArray[i] = new UnitImpl(&BW::BWDATA::UnitNodeTable[i], i);
-
-    // iterate through bullets and create BulletImpl for each
-    for (u16 i = 0; i < BW::BULLET_ARRAY_MAX_LENGTH; ++i)
-      bulletArray[i] = new BulletImpl(&BW::BWDATA::BulletNodeTable[i], i);
+    // iterate through units and create UnitImpl for each, and through bullets and create BulletImpl for each
+    // scm-sim: as many as the game's tables have, where the game's code says they are (BW/Layout.h)
+    this->scmsimLayout();
 
     this->initializeData();
+  }
+  //----------------------------------------------- THE GAME'S TABLES ----------------------------------------
+  // scm-sim: where the game keeps its units and bullets (a plugin may have moved them: BW/Layout.h), and BWAPI's
+  // objects for them, made again when they are not the ones made for that table.
+  void GameImpl::scmsimLayout()
+  {
+    BW::LayoutRead::read();
+    if ( unitArray.size() != BW::layout.unitSlots || (!unitArray.empty() && unitArray[0]->getOriginalRawData != &BW::BWDATA::UnitNodeTable[0]) )
+    {
+      for (UnitImpl* u : unitArray)
+        delete u;
+      unitArray.assign(BW::layout.unitSlots, nullptr);
+      for (u16 i = 0; i < BW::layout.unitSlots; ++i)
+        unitArray[i] = new UnitImpl(&BW::BWDATA::UnitNodeTable[i], i);
+    }
+    if ( bulletArray.size() != BW::layout.bulletSlots || (!bulletArray.empty() && bulletArray[0]->getRawData() != &BW::BWDATA::BulletNodeTable[0]) )
+    {
+      for (BulletImpl* b : bulletArray)
+        delete b;
+      bulletArray.assign(BW::layout.bulletSlots, nullptr);
+      for (u16 i = 0; i < BW::layout.bulletSlots; ++i)
+        bulletArray[i] = new BulletImpl(&BW::BWDATA::BulletNodeTable[i], i);
+    }
   }
   //----------------------------------------------- DESTRUCTOR -----------------------------------------------
   GameImpl::~GameImpl()
@@ -60,7 +79,7 @@ namespace BWAPI
     {
       if (u) delete u;
     }
-    unitArray.fill(nullptr);
+    unitArray.clear();
 
     // destroy all PlayerImpl
     for (int i = 0; i < std::extent<decltype(players)>::value; ++i)
@@ -74,7 +93,7 @@ namespace BWAPI
     {
       if (b) delete b;
     }
-    bulletArray.fill(nullptr);
+    bulletArray.clear();
   }
   //---------------------------------------- REFRESH SELECTION STATES ----------------------------------------
   void GameImpl::refreshSelectionStates()

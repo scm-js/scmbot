@@ -18,8 +18,8 @@
  * ExampleAIModule/Source/Dll.cpp). BWAPI's own headers are on the include path (<BWAPI.h>).
  *
  * The .scmbot file, little endian:
- *   "SCMBOT1\n", u32 header length, the header (JSON: format, key, name, memoryPages, commit, source, license (text),
- *   toolchain, mjs and wasm byte counts), then the module's JavaScript loader, then its wasm.
+ *   "SCMBOT1\n", u32 header length, the header (JSON: format, key, name, memoryPages, base, commit, source, license
+ *   (text), toolchain, mjs and wasm byte counts), then the module's JavaScript loader, then its wasm.
  */
 import { spawn } from "node:child_process";
 import { cpus } from "node:os";
@@ -30,7 +30,15 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HOME = process.env.SCMBOT_HOME || dirname(dirname(fileURLToPath(import.meta.url)));   // native/ (or /scmbot in the image)
 const OBJ = process.env.SCMBOT_OBJ || join(HOME, "out/obj/toolchain");
-export const TOOLCHAIN = "scmbot 1 (BWAPI 4.4.0)";
+/**
+ * What a bundle says built it. 3: the bot's memory starts at 2 GB, above the game's world and a mod's plugins', and
+ * BWAPI reads the game's tables where the game's code says they are (a plugin may have moved them); 2: BWAPI's types
+ * are read from the game's tables at the start of a match (a mod's too); 1: 1.16.1's types written in. Bundles of 1
+ * and 2 keep their memory at 1 GB and play vanilla games and mods without plugins.
+ */
+export const TOOLCHAIN = "scmbot 3 (BWAPI 4.4.0, types from the game's data, beside a mod's plugins)";
+/** Where the bot's part of the memory begins (`-sGLOBAL_BASE`, the bundle's `base`): 2 GB. */
+export const BASE_MB = 2048;
 /** How the person types this, for the messages that say what to run next (`scmjs bot` passes its own name). */
 const CMD = process.env.SCMBOT_COMMAND || "scmbot";
 const FORMAT = 1;
@@ -51,12 +59,12 @@ function bwapiSources() {
   ].map((f) => join(HOME, f));
 }
 
-/** The link flags of every build (native/link.sh's): the memory imported, BWAPI's data above the game's 1 GB. */
-function linkFlags(memoryMB) {
+/** The link flags of every build (native/link.sh's): the memory imported, BWAPI's data above the game's 2 GB, `botMB` of room. */
+function linkFlags(botMB) {
   return ["-O2", "-fexceptions",
-    "-sIMPORTED_MEMORY=1", `-sINITIAL_MEMORY=${memoryMB}MB`, "-sALLOW_MEMORY_GROWTH=0", "-sGLOBAL_BASE=1073741824", "-sSTACK_SIZE=8MB",
+    "-sIMPORTED_MEMORY=1", `-sINITIAL_MEMORY=${BASE_MB + botMB}MB`, "-sALLOW_MEMORY_GROWTH=0", `-sGLOBAL_BASE=${BASE_MB * 1048576}`, "-sSTACK_SIZE=8MB",
     "-sMODULARIZE=1", "-sEXPORT_ES6=1", "-sEXPORT_NAME=BwapiModule", "-sENVIRONMENT=node,web,worker",
-    "-sEXPORTED_FUNCTIONS=_scm_bwapi_config,_scm_bwapi_frame,_scm_bwapi_end,_scm_bwapi_map_file,_scm_bwapi_turn_sent,_scm_bwapi_lobby_races,_scm_bwapi_connect,_scm_bwapi_capture,_scm_bwapi_multiplayer,_scm_bwapi_shared,_scm_bwapi_match_ended,_scm_bwapi_gamedata,_scm_bwapi_gamedata_size,_malloc,_free",
+    "-sEXPORTED_FUNCTIONS=_scm_bwapi_config,_scm_bwapi_frame,_scm_bwapi_end,_scm_bwapi_map_file,_scm_bwapi_turn_sent,_scm_bwapi_lobby_races,_scm_bwapi_connect,_scm_bwapi_capture,_scm_bwapi_multiplayer,_scm_bwapi_shared,_scm_bwapi_match_ended,_scm_bwapi_gamedata,_scm_bwapi_gamedata_size,_scm_bwapi_unit_names,_scm_bwapi_types_status,_scm_bwapi_types_json,_scm_bwapi_layout_status,_scm_bwapi_view_json,_malloc,_free",
     "-sEXPORTED_RUNTIME_METHODS=stringToNewUTF8,UTF8ToString,FS,HEAPU8", "-sFORCE_FILESYSTEM=1"];
 }
 
@@ -352,11 +360,16 @@ function readConfig(dir) {
   const list = (v, what) => { if (v === undefined) return []; if (!Array.isArray(v) || v.some((x) => typeof x !== "string")) throw new Error(`scmbot.json: ${what} is a list of strings`); return v; };
   if (typeof c.key !== "string" || !KEY.test(c.key)) throw new Error("scmbot.json: key is the bot's short name: a to z, 0 to 9, - and _, at most 32");
   if (typeof c.name !== "string" || !c.name.trim() || c.name.length > 32) throw new Error("scmbot.json: name is how the bot is shown, at most 32 characters");
-  const memoryMB = c.memoryMB ?? 1792;
-  if (!Number.isInteger(memoryMB) || memoryMB < 1088 || memoryMB > 3072) throw new Error("scmbot.json: memoryMB is the whole memory: the game's 1024 MB and the bot's above it (1088 to 3072; 1792 if unsure)");
+  // The bot's room above the game's world (BWAPI's data and the bot's heap): botMB; or memoryMB, as scmbot 1 and 2 had
+  // it, the whole memory when the bot sat above the game's 1 GB (the room is memoryMB less 1024).
+  if (c.botMB !== undefined && c.memoryMB !== undefined) throw new Error("scmbot.json: give botMB (the bot's room) or memoryMB (as before: 1024 and the room), not both");
+  const botMB = c.botMB ?? (c.memoryMB !== undefined ? c.memoryMB - 1024 : 768);
+  if (!Number.isInteger(botMB) || botMB < 64 || botMB > 2047) throw new Error(c.botMB !== undefined
+    ? "scmbot.json: botMB is the bot's room above the game's 2 GB: BWAPI's data and the bot's heap (64 to 2047; 768 if unsure)"
+    : "scmbot.json: memoryMB is the game's 1024 MB and the bot's room above it (1088 to 3071): write botMB, the room alone, instead");
   if (typeof c.license !== "string" || !existsSync(join(dir, c.license))) throw new Error("scmbot.json: license names the bot's licence file (it goes with the build)");
   return {
-    key: c.key, name: c.name.trim(), memoryMB, license: c.license,
+    key: c.key, name: c.name.trim(), botMB, license: c.license,
     sources: list(c.sources, "sources"), exclude: list(c.exclude, "exclude"), include: list(c.include, "include"),
     defines: list(c.defines, "defines"), flags: list(c.flags, "flags"), prelude: typeof c.prelude === "string" ? c.prelude : null,
     std: typeof c.std === "string" && /^c\+\+(14|17|20)$/.test(c.std) ? c.std : "c++17",
@@ -483,7 +496,7 @@ async function build(dir) {
   const bwapi = readdirSync(OBJ).filter((f) => f.endsWith(".o")).map((f) => join(OBJ, f));
   const mjs = join(out, `${c.key}.mjs`), wasm = join(out, `${c.key}.wasm`);
   const embed = c.files.flatMap((e) => ["--embed-file", `${join(dir, e.from)}@/${e.to}`]);
-  const linked = await run("em++", [...linkFlags(c.memoryMB), ...embed, ...bwapi, ...objects, "-o", mjs]);
+  const linked = await run("em++", [...linkFlags(c.botMB), ...embed, ...bwapi, ...objects, "-o", mjs]);
   if (linked.code !== 0) {
     const missing = [...new Set((linked.err.match(/undefined symbol: [^\n(]+/g) ?? []).map((m) => m.slice(18).trim()))];
     const hints = [];
@@ -494,7 +507,7 @@ async function build(dir) {
     throw new Error(`the link failed${missing.length ? `, ${missing.length} names undefined: ${missing.slice(0, 10).join("; ")}${missing.length > 10 ? "; …" : ""}` : `:\n${linked.err.slice(-2000)}`}${hints.map((h) => `\n  hint: ${h}`).join("")}`);
   }
   const js = readFileSync(mjs), bin = readFileSync(wasm);
-  const header = Buffer.from(JSON.stringify({ format: FORMAT, key: c.key, name: c.name, memoryPages: c.memoryMB * 16, commit: c.commit, source: c.source, license: readFileSync(join(dir, c.license), "utf8"), toolchain: TOOLCHAIN, mjs: js.length, wasm: bin.length }));
+  const header = Buffer.from(JSON.stringify({ format: FORMAT, key: c.key, name: c.name, memoryPages: (BASE_MB + c.botMB) * 16, base: BASE_MB * 1048576, commit: c.commit, source: c.source, license: readFileSync(join(dir, c.license), "utf8"), toolchain: TOOLCHAIN, mjs: js.length, wasm: bin.length }));
   const head = Buffer.alloc(12);
   head.write("SCMBOT1\n", 0, "latin1");
   head.writeUInt32LE(header.length, 8);
@@ -636,7 +649,7 @@ function init(dir, chosen) {
   const base = (best ? best.p.replace(/^.*[\\/]/, "").replace(/\.vcxproj$/, "") : folderName(root)) || "mybot";
   const key = base.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "mybot";
   const git = readGit(root);
-  const config = { key, name: base.slice(0, 32), license, sources: ["src/**/*.cpp"], exclude: [], include: ["src"], defines: [], std: "c++17", memoryMB: 1792, source: git.url, commit: git.commit };
+  const config = { key, name: base.slice(0, 32), license, sources: ["src/**/*.cpp"], exclude: [], include: ["src"], defines: [], std: "c++17", botMB: 768, source: git.url, commit: git.commit };
   if (best) {
     config.sources = best.client ? best.r.sources.filter((f) => f !== best.client.main) : best.r.sources;
     Object.assign(config, { include: best.r.include, defines: best.r.defines, std: best.r.std ?? "c++17" });
@@ -751,7 +764,7 @@ extern "C" BWAPI::AIModule *newAIModule() { return new MyBot(); }
 `);
   const name = folderName(root) || "mybot";
   const key = name.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "mybot";
-  writeFileSync(join(root, "scmbot.json"), JSON.stringify({ key, name: name.slice(0, 32), license: "LICENSE", source: "", commit: "", sources: ["src/**/*.cpp"], include: ["src"], std: "c++17", memoryMB: 1536 }, null, 2) + "\n");
+  writeFileSync(join(root, "scmbot.json"), JSON.stringify({ key, name: name.slice(0, 32), license: "LICENSE", source: "", commit: "", sources: ["src/**/*.cpp"], include: ["src"], std: "c++17", botMB: 512 }, null, 2) + "\n");
   console.log(`a bot to start from: src/MyBot.cpp (workers mine, the base trains more), scmbot.json.${existsSync(join(root, "LICENSE")) ? "" : "\nAdd a LICENSE file (any licence you choose): it goes with every build."}\nnext: ${CMD} build`);
 }
 

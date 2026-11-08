@@ -1,6 +1,7 @@
 #pragma once
 #include <Util/Types.h>
 #include <string>
+#include <vector>
 
 #include <BWAPI/Player.h>
 #include <BWAPI/Client/PlayerData.h>
@@ -114,6 +115,20 @@ namespace BWAPI
       s32 _refundedGas;
 
       bool wasSeenByBWAPIPlayer = false;
+
+      // scm-sim: what `self` (PlayerData: the client protocol, at BWAPI 4.4's widths) has no place for. By the game's
+      // type id, as wide as the game's data (BW/Layout.h: a mod's types past 1.16.1's), and read where 4.4 had no number
+      // for an id (docs/bwapi-plan.md, "C1 and C2, as built").
+      struct ScmsimWide
+      {
+        std::vector<int> all, visible, completed, dead, killed;   // units
+        std::vector<int> upgradeLevel, maxUpgradeLevel;           // upgrades
+        std::vector<char> upgrading, researched, researching, researchAvailable, unitAvailable;
+        static int at(const std::vector<int> &v, int id) { return id >= 0 && id < (int)v.size() ? v[id] : 0; }
+        static bool on(const std::vector<char> &v, int id) { return id >= 0 && id < (int)v.size() && v[id] != 0; }
+        /// Sized for the game's types; the per-frame counts zeroed.
+        void size(int units, int upgrades, int techs);
+      } scmsimWide;
     private :
       int id = -1;
       u8 index;  /**< Order of the player, is used to load player's information from the memory */

@@ -72,7 +72,13 @@ namespace BWAPI
     
         Upgrade_60              = 60,
         None                    = 61,
+#ifdef SCM_SIM
+        // scm-sim: upgrades come from the game's data, which may be wider than 1.16.1's 61 (a mod's). None stays 61,
+        // the game's own "no upgrade"; Unknown moves above any width. See UnitType.h.
+        Unknown                 = 0xFFFF,
+#else
         Unknown,
+#endif
         MAX
       };
     }
@@ -246,4 +252,9 @@ namespace BWAPI
   }
 
   static_assert(sizeof(UpgradeType) == sizeof(int), "Expected type to resolve to primitive size.");
+#ifdef SCM_SIM
+  template<> const std::string &Type<UpgradeType, UpgradeTypes::Enum::Unknown>::nameOf(int id);
+  template<> std::deque<int> Type<UpgradeType, UpgradeTypes::Enum::Unknown>::namedIds();
+  template<> int Type<UpgradeType, UpgradeTypes::Enum::Unknown>::nameGeneration();
+#endif
 }

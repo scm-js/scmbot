@@ -4,11 +4,17 @@
 #include <BWAPI/UnitType.h>
 
 #include <Debug.h>
+#include "TypeData.h"
 
 namespace BWAPI
 {
+#ifdef SCM_SIM
+  // scm-sim: BWAPI 4.4's names, by its numbering (TypeData.h); the types the enum has keep them.
+  static const std::string typeNames44[TypeData::UPGRADE44] =
+#else
   template <>
-  const std::string Type<UpgradeType, UpgradeTypes::Enum::Unknown>::typeNames[UpgradeTypes::Enum::MAX] =
+  const std::string Type<UpgradeType, UpgradeTypes::Enum::Unknown>::typeNames[TypeData::UPGRADE44] =
+#endif
   {
     "Terran_Infantry_Armor",
     "Terran_Vehicle_Plating",
@@ -76,44 +82,44 @@ namespace BWAPI
   };
 
   // LOCALIZATION
-  std::string upgradeLocalNames[UpgradeTypes::Enum::MAX];
+  std::string upgradeLocalNames[TypeData::UPGRADE44];
 
   // DEFAULTS
-  static const int defaultOreCostBase[UpgradeTypes::Enum::MAX] =    // same as default gas cost base
+  static const int defaultOreCostBase[TypeData::UPGRADE44] =    // same as default gas cost base
   { 
     100, 100, 150, 150, 150, 100, 150, 100, 100, 100, 100, 100, 100, 100, 100, 200, 150, 100, 200, 150, 100, 150, 200, 150, 200, 150, 150, 100, 200,
     150, 150, 150, 150, 150, 150, 200, 200, 200, 150, 150, 150, 100, 200, 100, 150, 0, 0, 100, 100, 150, 150, 150, 150, 200, 100, 0, 0, 0, 0, 0, 0, 0, 0
   };
-  static const int defaultOreCostFactor[UpgradeTypes::Enum::MAX] =    // same as default gas cost factor
+  static const int defaultOreCostFactor[TypeData::UPGRADE44] =    // same as default gas cost factor
   { 
     75, 75, 75, 75, 75, 75, 75, 75, 75, 50, 50, 50, 75, 50, 75, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
   };
-  static const int defaultTimeCostBase[UpgradeTypes::Enum::MAX] =
+  static const int defaultTimeCostBase[TypeData::UPGRADE44] =
   { 
     4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 1500, 1500, 0, 2500,
     2500, 2500, 2500, 2500, 2400, 2000, 2000, 1500, 1500, 1500, 1500, 2500, 2500, 2500, 2000, 2500, 2500, 2500, 2000,
     2000, 2500, 2500, 2500, 1500, 2500, 0, 0, 2500, 2500, 2500, 2500, 2500, 2000, 2000, 2000, 0, 0, 0, 0, 0, 0, 0, 0
   };
-  static const int defaultTimeCostFactor[UpgradeTypes::Enum::MAX] =
+  static const int defaultTimeCostFactor[TypeData::UPGRADE44] =
   { 
     480, 480, 480, 480, 480, 480, 480, 480, 480, 480, 480, 480, 480, 480, 480, 480, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
   };
-  static const int defaultMaxRepeats[UpgradeTypes::Enum::MAX] = 
+  static const int defaultMaxRepeats[TypeData::UPGRADE44] = 
   {
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0
   };
   // ACTUAL
-  int oreCostBase[UpgradeTypes::Enum::MAX], gasCostBase[UpgradeTypes::Enum::MAX], timeCostBase[UpgradeTypes::Enum::MAX];
-  int oreCostFactor[UpgradeTypes::Enum::MAX], gasCostFactor[UpgradeTypes::Enum::MAX], timeCostFactor[UpgradeTypes::Enum::MAX];
-  int maxRepeats[UpgradeTypes::Enum::MAX];
+  int oreCostBase[TypeData::UPGRADE44], gasCostBase[TypeData::UPGRADE44], timeCostBase[TypeData::UPGRADE44];
+  int oreCostFactor[TypeData::UPGRADE44], gasCostFactor[TypeData::UPGRADE44], timeCostFactor[TypeData::UPGRADE44];
+  int maxRepeats[TypeData::UPGRADE44];
 
   namespace upgradeInternalWhat
   {
     using namespace UnitTypes::Enum;
-    static const int whatUpgrades[UpgradeTypes::Enum::MAX] =
+    static const int whatUpgrades[TypeData::UPGRADE44] =
     {
       Terran_Engineering_Bay, Terran_Armory, Terran_Armory, Zerg_Evolution_Chamber, Zerg_Spire, Protoss_Forge, Protoss_Cybernetics_Core, Terran_Engineering_Bay,
       Terran_Armory, Terran_Armory, Zerg_Evolution_Chamber, Zerg_Evolution_Chamber, Zerg_Spire, Protoss_Forge, Protoss_Cybernetics_Core, Protoss_Forge, Terran_Academy,
@@ -127,7 +133,7 @@ namespace BWAPI
   namespace upgradeInternalReqs
   {
     using namespace UnitTypes::Enum;
-    static const int requirements[3][UpgradeTypes::Enum::MAX] =
+    static const int requirements[3][TypeData::UPGRADE44] =
     {
       // Level 1
       { None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, 
@@ -215,7 +221,7 @@ namespace BWAPI
 
 #define TSET(x) {std::begin(x), std::end(x)}
 #define TSETEMPTY {}
-    static const UnitType::set upgradeWhatUses[UpgradeTypes::Enum::MAX] =
+    static const UnitType::set upgradeWhatUses[TypeData::UPGRADE44] =
     {
       TSET(Infantry_Armor), TSET(Vehicle_Plating), TSET(Ship_Plating), TSET(Carapace), TSET(Flyer_Carapace), TSET(Protoss_Armor), TSET(Protoss_Plating),
       TSET(Infantry_Weapons), TSET(Vehicle_Weapons), TSET(Ship_Weapons), TSET(Zerg_MeleeAtk), TSET(Zerg_RangeAtk), TSET(Zerg_FlyerAtk), TSET(Protoss_GrndWpn),
@@ -234,7 +240,7 @@ namespace BWAPI
   namespace upgradeInternalRace
   {
     using namespace Races::Enum;
-    static const int upgradeRaces[UpgradeTypes::Enum::MAX] =
+    static const int upgradeRaces[TypeData::UPGRADE44] =
     {
       Terran, Terran, Terran, Zerg, Zerg, Protoss, Protoss, Terran, Terran, Terran, Zerg, Zerg, Zerg, Protoss, Protoss, Protoss, Terran, Terran, Terran, Terran, Terran, 
       Terran, Terran, Terran, Zerg, Zerg, Zerg, Zerg, Zerg, Zerg, Zerg, Zerg, Zerg, Protoss, Protoss, Protoss, Protoss, Protoss, Protoss, Protoss, Protoss, Protoss, 
@@ -260,58 +266,108 @@ namespace BWAPI
       Argus_Jewel, Argus_Talisman, Caduceus_Reactor, Chitinous_Plating,
       Anabolic_Synthesis, Charon_Boosters, None, Unknown };
   }
+  // scm-sim: each answer is the game's data once a game's tables were read (TypeData.h), else BWAPI 4.4's own table,
+  // whose row for an id is TypeData::upgradeRow44 (a mod's upgrade past 1.16.1's reads Unknown's).
+  using TypeData::upgradeRow44;
   Race UpgradeType::getRace() const
   {
-    return upgradeInternalRace::upgradeRaces[this->getID()];
+    if ( auto r = TypeData::upgrade(this->getID()) )
+      return Race(r->race);
+    return upgradeInternalRace::upgradeRaces[upgradeRow44(this->getID())];
   }
   int UpgradeType::mineralPrice(int level) const
   {
-    return defaultOreCostBase[this->getID()] + 
+    if ( auto r = TypeData::upgrade(this->getID()) )
+      return r->oreBase + std::max(0, level-1) * r->oreFactor;
+    return defaultOreCostBase[upgradeRow44(this->getID())] + 
            std::max(0, level-1) * this->mineralPriceFactor();
   }
   int UpgradeType::mineralPriceFactor() const
   {
-    return defaultOreCostFactor[this->getID()];
+    if ( auto r = TypeData::upgrade(this->getID()) )
+      return r->oreFactor;
+    return defaultOreCostFactor[upgradeRow44(this->getID())];
   }
   int UpgradeType::gasPrice(int level) const
   {
+    // scm-sim: the game's table has a gas price of its own (BWAPI 4.4 took the mineral price: the same in 1.16.1).
+    if ( auto r = TypeData::upgrade(this->getID()) )
+      return r->gasBase + std::max(0, level-1) * r->gasFactor;
     // Gas price is exactly the same as mineral price
     return mineralPrice(level);
   }
   int UpgradeType::gasPriceFactor() const
   {
+    if ( auto r = TypeData::upgrade(this->getID()) )
+      return r->gasFactor;
     // Gas price factor is the same as mineral price factor
     return mineralPriceFactor();
   }
   int UpgradeType::upgradeTime(int level) const
   {
-    return defaultTimeCostBase[this->getID()] + 
+    if ( auto r = TypeData::upgrade(this->getID()) )
+      return r->timeBase + std::max(0, level-1) * r->timeFactor;
+    return defaultTimeCostBase[upgradeRow44(this->getID())] + 
             std::max(0, level-1) * this->upgradeTimeFactor();
   }
   int UpgradeType::upgradeTimeFactor() const
   {
-    return defaultTimeCostFactor[this->getID()];
+    if ( auto r = TypeData::upgrade(this->getID()) )
+      return r->timeFactor;
+    return defaultTimeCostFactor[upgradeRow44(this->getID())];
   }
   UnitType UpgradeType::whatUpgrades() const
   {
-    return upgradeInternalWhat::whatUpgrades[this->getID()];
+    if ( auto r = TypeData::upgrade(this->getID()) )
+      return r->whatUpgrades;
+    return upgradeInternalWhat::whatUpgrades[upgradeRow44(this->getID())];
   }
   const UnitType::set& UpgradeType::whatUses() const
   {
-    return upgradeInternalUsage::upgradeWhatUses[this->getID()];
+    if ( auto r = TypeData::upgrade(this->getID()) )
+      return r->whatUses;
+    return upgradeInternalUsage::upgradeWhatUses[upgradeRow44(this->getID())];
   }
   int UpgradeType::maxRepeats() const
   {
-    return defaultMaxRepeats[this->getID()];
+    if ( auto r = TypeData::upgrade(this->getID()) )
+      return r->maxRepeats;
+    return defaultMaxRepeats[upgradeRow44(this->getID())];
   }
   UnitType UpgradeType::whatsRequired(int level) const
   {
+    if ( auto r = TypeData::upgrade(this->getID()) )
+      return level >= 1 && level <= 3 ? r->required[level-1] : UnitTypes::None;
     if ( level >= 1 && level <= 3)
-      return upgradeInternalReqs::requirements[level-1][this->getID()];
+      return upgradeInternalReqs::requirements[level-1][upgradeRow44(this->getID())];
     return UnitTypes::None;
   }
   const UpgradeType::set& UpgradeTypes::allUpgradeTypes()
   {
+    if ( TypeData::use )
+      return TypeData::game.allUpgrades;
     return UpgradeTypeSet::upgradeTypeSet;
+  }
+
+  template<> const std::string &Type<UpgradeType, UpgradeTypes::Enum::Unknown>::nameOf(int id)
+  {
+    int i = TypeData::upgrade44(id);
+    if ( i >= 0 ) return typeNames44[i];
+    if ( auto r = TypeData::upgrade(id) ) return r->name;
+    return typeNames44[TypeData::UPGRADE44 - 1];
+  }
+  template<> std::deque<int> Type<UpgradeType, UpgradeTypes::Enum::Unknown>::namedIds()
+  {
+    std::deque<int> ids;
+    for ( int i = 0; i <= UpgradeTypes::Enum::None; ++i ) ids.push_back(i);
+    ids.push_back(UpgradeTypes::Enum::Unknown);
+    if ( TypeData::use )
+      for ( int i = UpgradeTypes::Enum::None + 1; i < (int)TypeData::game.upgrades.size(); ++i )
+        if ( !TypeData::game.upgrades[i].name.empty() ) ids.push_back(i);
+    return ids;
+  }
+  template<> int Type<UpgradeType, UpgradeTypes::Enum::Unknown>::nameGeneration()
+  {
+    return TypeData::game.generation * 2 + (TypeData::use ? 1 : 0);
   }
 }

@@ -2,6 +2,8 @@
 #include "GameImpl.h"
 #include "UnitImpl.h"
 
+#include <algorithm>
+#include <initializer_list>
 #include <string>
 #include <Util/Convenience.h>
 
@@ -13,6 +15,16 @@
 
 namespace BWAPI
 {
+  //------------------------------------------- THE GAME'S TYPES ---------------------------------------------
+  // scm-sim: as wide as the game's data (PlayerImpl.h); the per-frame counts are zeroed with `self`'s
+  void PlayerImpl::ScmsimWide::size(int units, int upgrades, int techs)
+  {
+    for (auto *v : { &all, &visible, &completed, &dead, &killed }) if ( (int)v->size() != units ) v->assign(units, 0);
+    for (auto *v : { &upgradeLevel, &maxUpgradeLevel }) if ( (int)v->size() != upgrades ) v->assign(upgrades, 0);
+    for (auto *v : { &upgrading }) if ( (int)v->size() != upgrades ) v->assign(upgrades, 0);
+    for (auto *v : { &researched, &researching, &researchAvailable }) if ( (int)v->size() != techs ) v->assign(techs, 0);
+    if ( (int)unitAvailable.size() != units ) unitAvailable.assign(units, 0);
+  }
   //--------------------------------------------- CONSTRUCTOR ------------------------------------------------
   PlayerImpl::PlayerImpl(u8 index)
     : index(index)
@@ -154,24 +166,23 @@ namespace BWAPI
       MemZero(self->maxUpgradeLevel);
       MemZero(self->isResearchAvailable);
       MemZero(self->isUnitAvailable);
+      scmsimWide.size(BW::layout.unitTypes, BW::layout.upgradeTypes, BW::layout.techTypes);
+      for (auto *v : { &scmsimWide.upgradeLevel, &scmsimWide.maxUpgradeLevel }) std::fill(v->begin(), v->end(), 0);
+      for (auto *v : { &scmsimWide.upgrading, &scmsimWide.researched, &scmsimWide.researching, &scmsimWide.researchAvailable, &scmsimWide.unitAvailable }) std::fill(v->begin(), v->end(), 0);
 
       if (!this->isNeutral() && index < BW::PLAYER_COUNT)
       {
         // set upgrade level for visible enemy units
-        for(int i = 0; i < 46; ++i)
+        // scm-sim: every upgrade of the game's data, where the game keeps the levels (BW/Layout.h); 4.4's in `self`
+        for(int i = 0; i < BW::layout.upgradeTypes; ++i)
         {
           for(UnitType t : UpgradeType(i).whatUses())
           {
-            if ( self->completedUnitCount[t] > 0 )
-              self->upgradeLevel[i] = BW::BWDATA::Game.currentUpgradeLevelSC[index][i];
-          }
-        }
-        for (int i = 46; i < BW::UPGRADE_TYPE_COUNT; ++i)
-        {
-          for(UnitType t : UpgradeType(i).whatUses())
-          {
-            if ( self->completedUnitCount[t] > 0 )
-              self->upgradeLevel[i] = BW::BWDATA::Game.currentUpgradeLevelBW[index][i - 46];
+            if ( this->completedUnitCount(t) > 0 )
+            {
+              if ( i < BW::UPGRADE_TYPE_COUNT ) self->upgradeLevel[i] = BW::layout.upgradeLevel(i, index);
+              scmsimWide.upgradeLevel[i] = BW::layout.upgradeLevel(i, index);
+            }
           }
         }
       }
@@ -190,42 +201,50 @@ namespace BWAPI
       self->refundedMinerals   = this->_refundedMinerals;
       self->refundedGas        = this->_refundedGas;
 
+      // scm-sim: the levels, techs and availability where the game keeps them (BW/Layout.h: a plugin may have moved and
+      // widened them), every id of the game's data: 4.4's ids in `self`, all of them in `scmsimWide`
+      scmsimWide.size(BW::layout.unitTypes, BW::layout.upgradeTypes, BW::layout.techTypes);
       // set upgrade level
-      for(int i = 0; i < 46; ++i)
+      for(int i = 0; i < BW::layout.upgradeTypes; ++i)
       {
-        self->upgradeLevel[i]     = BW::BWDATA::Game.currentUpgradeLevelSC[index][i];
-        self->maxUpgradeLevel[i]  = BW::BWDATA::Game.maxUpgradeLevelSC[index][i];
-      }
-      for (int i = 46; i < BW::UPGRADE_TYPE_COUNT; ++i)
-      {
-        self->upgradeLevel[i]     = BW::BWDATA::Game.currentUpgradeLevelBW[index][i - 46];
-        self->maxUpgradeLevel[i]  = BW::BWDATA::Game.maxUpgradeLevelBW[index][i - 46];
+        int level = BW::layout.upgradeLevel(i, index), most = BW::layout.upgradeMax(i, index);
+        if ( i < BW::UPGRADE_TYPE_COUNT ) { self->upgradeLevel[i] = level; self->maxUpgradeLevel[i] = most; }
+        scmsimWide.upgradeLevel[i] = level; scmsimWide.maxUpgradeLevel[i] = most;
       }
 
       // set abilities researched
-      for(int i = 0; i < 24; ++i)
+      for(int i = 0; i < BW::layout.techTypes; ++i)
       {
-        self->hasResearched[i]        = (TechType(i).whatResearches() == UnitTypes::None ? true : !!BW::BWDATA::Game.techResearchedSC[index][i]);
-        self->isResearchAvailable[i]  = !!BW::BWDATA::Game.techAvailableSC[index][i];
-      }
-      for (int i = 24; i < BW::TECH_TYPE_COUNT; ++i)
-      {
-        self->hasResearched[i]        = (TechType(i).whatResearches() == UnitTypes::None ? true : !!BW::BWDATA::Game.techResearchedBW[index][i - 24]);
-        self->isResearchAvailable[i]  = !!BW::BWDATA::Game.techAvailableBW[index][i - 24];
+        bool researched = (TechType(i).whatResearches() == UnitTypes::None ? true : BW::layout.researched(i, index));
+        bool available  = BW::layout.researchAvailable(i, index);
+        if ( i < BW::TECH_TYPE_COUNT ) { self->hasResearched[i] = researched; self->isResearchAvailable[i] = available; }
+        scmsimWide.researched[i] = researched; scmsimWide.researchAvailable[i] = available;
       }
 
       // set upgrades in progress
-      for (int i = 0; i < BW::UPGRADE_TYPE_COUNT; ++i)
-        self->isUpgrading[i]   = (BW::BWDATA::Game.upgradeInProgressBW[index * 8 + i/8] & (1 << i%8)) != 0;
+      for (int i = 0; i < BW::layout.upgradeTypes; ++i)
+      {
+        bool on = BW::layout.isUpgrading(i, index);
+        if ( i < BW::UPGRADE_TYPE_COUNT ) self->isUpgrading[i] = on;
+        scmsimWide.upgrading[i] = on;
+      }
       
       // set research in progress
-      for (int i = 0; i < BW::TECH_TYPE_COUNT; ++i)
-        self->isResearching[i] = (BW::BWDATA::Game.techResearchInProgressBW[index * 6 + i/8] & (1 << i%8)) != 0;
+      for (int i = 0; i < BW::layout.techTypes; ++i)
+      {
+        bool on = BW::layout.isResearching(i, index);
+        if ( i < BW::TECH_TYPE_COUNT ) self->isResearching[i] = on;
+        scmsimWide.researching[i] = on;
+      }
 
-      for (int i = 0; i < BW::UNIT_TYPE_COUNT; ++i)
-        self->isUnitAvailable[i] = !!BW::BWDATA::Game.unitAvailability[index][i];
+      for (int i = 0; i < BW::layout.unitTypes; ++i)
+      {
+        bool on = BW::layout.available(i, index);
+        if ( i < BW::UNIT_TYPE_COUNT ) self->isUnitAvailable[i] = on;
+        scmsimWide.unitAvailable[i] = on;
+      }
 
-      self->hasResearched[TechTypes::Enum::Nuclear_Strike] = self->isUnitAvailable[UnitTypes::Enum::Terran_Nuclear_Missile];
+      self->hasResearched[Wire::techType(TechTypes::Enum::Nuclear_Strike)] = self->isUnitAvailable[UnitTypes::Enum::Terran_Nuclear_Missile];
     }
 
     // Get Scores, supply
@@ -238,6 +257,8 @@ namespace BWAPI
       MemZero(self->supplyUsed);
       MemZero(self->deadUnitCount);
       MemZero(self->killedUnitCount);
+      std::fill(scmsimWide.dead.begin(), scmsimWide.dead.end(), 0); // scm-sim: the game's types (PlayerImpl.h)
+      std::fill(scmsimWide.killed.begin(), scmsimWide.killed.end(), 0);
 
       self->totalUnitScore      = 0;
       self->totalKillScore      = 0;
@@ -256,22 +277,25 @@ namespace BWAPI
         self->supplyUsed[i]   = BW::BWDATA::Game.supplies[i].used[index];
       }
       // set total unit counts
-      for (int i = 0; i < BW::UNIT_TYPE_COUNT; ++i)
+      // scm-sim: where the game keeps the deaths and kills (BW/Layout.h), every type of its data
+      scmsimWide.size(BW::layout.unitTypes, BW::layout.upgradeTypes, BW::layout.techTypes);
+      for (int i = 0; i < BW::layout.unitTypes; ++i)
       {
-        self->deadUnitCount[i]   = BW::BWDATA::Game.unitCounts.dead[i][index];
-        self->killedUnitCount[i] = BW::BWDATA::Game.unitCounts.killed[i][index];
+        int dead = BW::layout.count(BW::layout.countsDead, i, index), killed = BW::layout.count(BW::layout.countsKilled, i, index);
+        if ( i < BW::UNIT_TYPE_COUNT ) { self->deadUnitCount[i] = dead; self->killedUnitCount[i] = killed; }
+        scmsimWide.dead[i] = dead; scmsimWide.killed[i] = killed;
       }
       // set macro dead unit counts
-      self->deadUnitCount[UnitTypes::AllUnits]    = BW::BWDATA::Game.allUnitsLost[index] + BW::BWDATA::Game.allBuildingsLost[index];
-      self->deadUnitCount[UnitTypes::Men]         = BW::BWDATA::Game.allUnitsLost[index];
-      self->deadUnitCount[UnitTypes::Buildings]   = BW::BWDATA::Game.allBuildingsLost[index];
-      self->deadUnitCount[UnitTypes::Factories]   = BW::BWDATA::Game.allFactoriesLost[index];
+      self->deadUnitCount[Wire::unitType(UnitTypes::AllUnits)]    = BW::BWDATA::Game.allUnitsLost[index] + BW::BWDATA::Game.allBuildingsLost[index];
+      self->deadUnitCount[Wire::unitType(UnitTypes::Men)]         = BW::BWDATA::Game.allUnitsLost[index];
+      self->deadUnitCount[Wire::unitType(UnitTypes::Buildings)]   = BW::BWDATA::Game.allBuildingsLost[index];
+      self->deadUnitCount[Wire::unitType(UnitTypes::Factories)]   = BW::BWDATA::Game.allFactoriesLost[index];
 
       // set macro kill unit counts
-      self->killedUnitCount[UnitTypes::AllUnits]  = BW::BWDATA::Game.allUnitsKilled[index] + BW::BWDATA::Game.allBuildingsRazed[index];
-      self->killedUnitCount[UnitTypes::Men]       = BW::BWDATA::Game.allUnitsKilled[index];
-      self->killedUnitCount[UnitTypes::Buildings] = BW::BWDATA::Game.allBuildingsRazed[index];
-      self->killedUnitCount[UnitTypes::Factories] = BW::BWDATA::Game.allFactoriesRazed[index];
+      self->killedUnitCount[Wire::unitType(UnitTypes::AllUnits)]  = BW::BWDATA::Game.allUnitsKilled[index] + BW::BWDATA::Game.allBuildingsRazed[index];
+      self->killedUnitCount[Wire::unitType(UnitTypes::Men)]       = BW::BWDATA::Game.allUnitsKilled[index];
+      self->killedUnitCount[Wire::unitType(UnitTypes::Buildings)] = BW::BWDATA::Game.allBuildingsRazed[index];
+      self->killedUnitCount[Wire::unitType(UnitTypes::Factories)] = BW::BWDATA::Game.allFactoriesRazed[index];
       
       // set score counts
       self->totalUnitScore      = BW::BWDATA::Game.allUnitScore[index];

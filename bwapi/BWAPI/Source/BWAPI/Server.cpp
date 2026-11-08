@@ -25,6 +25,17 @@
 
 namespace BWAPI
 {
+  // scm-sim: a unit's types as GameData (BWAPI 4.4's client protocol) carries them: 4.4's numbers for BWAPI's own
+  // sentinels, which moved above any table's width in this build (Client/PlayerData.h, Wire).
+  static void scmsimToWire(UnitData &d)
+  {
+    d.type = Wire::unitValue(d.type);
+    d.buildType = Wire::unitValue(d.buildType);
+    for ( int &t : d.trainingQueue ) t = Wire::unitValue(t);
+    d.tech = Wire::techValue(d.tech);
+    d.upgrade = Wire::upgradeValue(d.upgrade);
+  }
+
   const int PIPE_TIMEOUT = 3000;
   const int PIPE_SYSTEM_BUFFER_SIZE = 4096;
 
@@ -505,7 +516,10 @@ namespace BWAPI
   void Server::updateSharedMemory()
   {
     for (Unit u : BroodwarImpl.evadeUnits)
+    {
       data->units[getUnitID(u)] = static_cast<UnitImpl*>(u)->data;
+      scmsimToWire(data->units[getUnitID(u)]);
+    }
 
     data->frameCount              = Broodwar->getFrameCount();
     data->replayFrameCount        = Broodwar->getReplayFrameCount();
@@ -579,7 +593,7 @@ namespace BWAPI
           p->supplyTotal[j]  = p2->supplyTotal[j];
           p->supplyUsed[j]  = p2->supplyUsed[j];
         }
-        for(int j = 0; j < UnitTypes::Enum::MAX; ++j)
+        for(int j = 0; j < Wire::UNITS; ++j) // scm-sim: the protocol's width
         {
           p->allUnitCount[j]        = p2->allUnitCount[j];
           p->visibleUnitCount[j]    = p2->visibleUnitCount[j];
@@ -611,11 +625,15 @@ namespace BWAPI
 
       //dynamic unit data
       for(Unit i : Broodwar->getAllUnits())
+      {
         data->units[getUnitID(i)] = static_cast<UnitImpl*>(i)->data;
+        scmsimToWire(data->units[getUnitID(i)]);
+      }
 
+      // scm-sim: the protocol holds 1,700 slots; a table a plugin made longer (BW/Layout.h) is listed as far as that
       for(int i = 0; i < BW::UNIT_ARRAY_MAX_LENGTH; ++i)
       {
-        Unit u = Broodwar->indexToUnit(i);
+        Unit u = i < (int)BroodwarImpl.unitArray.size() ? Broodwar->indexToUnit(i) : nullptr;
         int id = -1;
         if ( u )
           id = getUnitID(u);
@@ -628,9 +646,11 @@ namespace BWAPI
       const BW::unitFinder* bwyf = BW::BWDATA::UnitOrderingY.data();
       int bwSearchSize = BW::BWDATA::UnitOrderingCount;
 
-      for ( int i = 0; i < bwSearchSize; ++i, bwxf++, bwyf++ )
+      // scm-sim: the game's slots (BW/Layout.h); the protocol's lists hold 3,400 entries
+      const int scmsimSlots = (int)BroodwarImpl.unitArray.size();
+      for ( int i = 0; i < bwSearchSize && xf < data->xUnitSearch + BW::UNIT_ARRAY_MAX_LENGTH * 2 && yf < data->yUnitSearch + BW::UNIT_ARRAY_MAX_LENGTH * 2; ++i, bwxf++, bwyf++ )
       {
-        if (bwxf->unitIndex > 0 && bwxf->unitIndex <= BW::UNIT_ARRAY_MAX_LENGTH)
+        if (bwxf->unitIndex > 0 && bwxf->unitIndex <= scmsimSlots)
         {
           UnitImpl* u = BroodwarImpl.unitArray[bwxf->unitIndex-1];
           if ( u && u->canAccess() )
@@ -641,7 +661,7 @@ namespace BWAPI
           }
         } // x index
 
-        if (bwyf->unitIndex > 0 && bwyf->unitIndex <= BW::UNIT_ARRAY_MAX_LENGTH)
+        if (bwyf->unitIndex > 0 && bwyf->unitIndex <= scmsimSlots)
         {
           UnitImpl* u = BroodwarImpl.unitArray[bwyf->unitIndex-1];
           if ( u && u->canAccess() )
@@ -660,7 +680,7 @@ namespace BWAPI
 
       //dynamic bullet data
       for(int id = 0; id < 100; ++id)
-        data->bullets[id] = BroodwarImpl.getBulletFromIndex(id)->data;
+        if ( BroodwarImpl.getBulletFromIndex(id) ) data->bullets[id] = BroodwarImpl.getBulletFromIndex(id)->data; // scm-sim: the game's slots (BW/Layout.h)
       
       //dynamic nuke dot data
       int j = 0;

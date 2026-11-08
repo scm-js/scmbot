@@ -13,6 +13,7 @@
 
 #include "Dialog.h"
 #include "BWGame.h"
+#include "Layout.h"
 
 #pragma pack(1)
 
@@ -41,6 +42,19 @@ namespace BW
 #ifndef SHADOW_BROODWAR
 
 #define IS_REF(name,addr) (& name) = *reinterpret_cast<std::remove_reference<decltype(name)>::type*>(addr);
+
+  // scm-sim: a table a plugin may move, read where the game's code says it is (Layout.h), with the uses BWAPI's
+  // arrays had (`[i]`, `data()`, `size()`).
+  template <class T> struct LaidOut
+  {
+    uint32_t Layout::*base;
+    uint32_t Layout::*slots;
+    T *data() const { return reinterpret_cast<T *>(static_cast<uintptr_t>(layout.*base)); }
+    T &operator[](size_t i) const { return data()[i]; }
+    size_t size() const { return layout.*slots; }
+  };
+  /// The unit finders' length, where the game keeps it (Layout.h).
+  struct LaidOutFinderLength { operator int() const { return layout.finderLength(); } };
 
   namespace BWDATA
   {
@@ -114,15 +128,18 @@ namespace BW
       CUnit* IS_REF(UnitNodeList_HiddenUnit_First, 0x006283EC);
       CUnit* IS_REF(UnitNodeList_ScannerSweep_First, 0x006283F4);
 
-      std::array<CUnit, UNIT_ARRAY_MAX_LENGTH> IS_REF(UnitNodeTable, 0x0059CCA8);
+      // scm-sim: 0x0059CCA8 (1,700 slots) in 1.16.1; where the game's code says (Layout.h)
+      const LaidOut<CUnit> UnitNodeTable{ &Layout::units, &Layout::unitSlots };
 
       CBullet* IS_REF(BulletNodeTable_FirstElement, 0x0064DEC4);
-      std::array<CBullet, BULLET_ARRAY_MAX_LENGTH> IS_REF(BulletNodeTable, 0x0064B2E8);
+      // scm-sim: 0x0064B2E8 (100 slots) in 1.16.1; where the game's code says (Layout.h)
+      const LaidOut<CBullet> BulletNodeTable{ &Layout::bullets, &Layout::bulletSlots };
 
       // Unit ordering system (fast units in region calculations)
-      std::array<unitFinder, UNIT_ARRAY_MAX_LENGTH * 2> IS_REF(UnitOrderingX, 0x0066FF78);
-      std::array<unitFinder, UNIT_ARRAY_MAX_LENGTH * 2> IS_REF(UnitOrderingY, 0x006769B8);
-      int IS_REF(UnitOrderingCount, 0x0066FF74);
+      // scm-sim: 0x0066FF78, 0x006769B8 and 0x0066FF74 in 1.16.1; where the game's code says (Layout.h)
+      const LaidOut<unitFinder> UnitOrderingX{ &Layout::finderX, &Layout::unitSlots };
+      const LaidOut<unitFinder> UnitOrderingY{ &Layout::finderY, &Layout::unitSlots };
+      const LaidOutFinderLength UnitOrderingCount{};
 
       // Mode stuff
       u8 IS_REF(gameType, 0x00596820);

@@ -255,7 +255,16 @@ namespace BWAPI
         Powerup_Terran_Gas_Tank_Type_2,
 
         None,
+#ifdef SCM_SIM
+        // scm-sim: the types come from the game's data (BWAPILIB/Source/TypeData.cpp), whose table may be wider than
+        // 1.16.1's 228 (a mod's): every id below its width is a type. None stays 228, the game's own "no unit" (the
+        // executable compares with it, and a wide table keeps it free: DatExtend's units.datex holds 228 wherever a
+        // unit has none); BWAPI's own sentinels move to the top of the 16-bit range, above any table's width. GameData,
+        // BWAPI 4.4's client protocol, still numbers them 229 to 233 (Client/PlayerData.h, Wire).
+        AllUnits = 0xFFFB,
+#else
         AllUnits,
+#endif
         Men,
         Buildings,
         Factories,
@@ -1306,4 +1315,10 @@ namespace BWAPI
   }
 
   static_assert(sizeof(UnitType) == sizeof(int), "Expected type to resolve to primitive size.");
+#ifdef SCM_SIM
+  // scm-sim: the names of the game's data (BWAPILIB/Source/TypeData.cpp).
+  template<> const std::string &Type<UnitType, UnitTypes::Enum::Unknown>::nameOf(int id);
+  template<> std::deque<int> Type<UnitType, UnitTypes::Enum::Unknown>::namedIds();
+  template<> int Type<UnitType, UnitTypes::Enum::Unknown>::nameGeneration();
+#endif
 }

@@ -16,17 +16,17 @@ namespace BW
   {
     BW::CUnit* bwTarget = static_cast<BWAPI::UnitImpl*>(target)->getOriginalRawData;
     u16 unitID = static_cast<u16>((bwTarget - BWDATA::UnitNodeTable.data()) + 1);
-    if (unitID <= UNIT_ARRAY_MAX_LENGTH)
+    if (unitID <= layout.unitSlots) // scm-sim: the game's slots and its id's shift (Layout.h)
     {
-      this->targetID = unitID | (bwTarget->uniquenessIdentifier << 11);
+      this->targetID = static_cast<u16>(unitID | (bwTarget->uniquenessIdentifier << layout.tagShift));
     }
   }
   UnitTarget::UnitTarget(const BW::CUnit* target)
   {
     u16 unitID = static_cast<u16>((target - BWDATA::UnitNodeTable.data()) + 1);
-    if (unitID <= UNIT_ARRAY_MAX_LENGTH)
+    if (unitID <= layout.unitSlots) // scm-sim: the game's slots and its id's shift (Layout.h)
     {
-      this->targetID = unitID | (target->uniquenessIdentifier << 11);
+      this->targetID = static_cast<u16>(unitID | (target->uniquenessIdentifier << layout.tagShift));
     }
   }
   //-------------------------------------------------- GETTARGET ---------------------------------------------
