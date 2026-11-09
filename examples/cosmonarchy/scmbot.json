@@ -1,0 +1,20 @@
+{
+  "key": "cosmonarchy-example",
+  "name": "Cosmonarchy Example",
+  "license": "LICENSE",
+  "source": "https://github.com/scm-js/scmbot/tree/main/examples/cosmonarchy",
+  "commit": "",
+  "sources": [
+    "src/**/*.cpp"
+  ],
+  "include": [
+    "src",
+    "."
+  ],
+  "std": "c++17",
+  "botMB": 256,
+  "mod": {
+    "name": "Cosmonarchy BW",
+    "hash": "ac3f86533e4b5a31"
+  }
+}

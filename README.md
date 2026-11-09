@@ -50,6 +50,24 @@ scmbot new       # src/MyBot.cpp and scmbot.json: workers mine, the base trains 
 scmbot build
 ```
 
+### A bot for a mod
+
+A bot made for a mod names the mod's own units: in Cosmonarchy the terran worker is the
+Mason and the first barracks the Stockade, which BWAPI's own names do not cover. In your
+bot's folder, [`scmjs`](https://www.npmjs.com/package/@scm-js/cli) writes them from the mod:
+
+```sh
+scmjs mod header "<the mod's release, folder, .mpq or .exe>" --out . --bot
+scmbot build
+```
+
+The first command writes `<Mod>.h` (every unit, weapon, upgrade and technology of the mod
+as a BWAPI type, by the mod's names: `Cosmonarchy_BW::UnitTypes::Terran_Mason`) and adds
+the mod's name and hash to `scmbot.json`; the build carries them into the `.scmbot` file,
+so the play page and `scmjs bot run … --mod` say the bot is "made for" the mod. A small bot
+for Cosmonarchy, which mines, builds Stockades and attacks with Mavericks, is in
+[`examples/cosmonarchy`](examples/cosmonarchy): generate its header as above, then build it.
+
 ## Playing it
 
 On the play page, **Options → Community bots → Add a bot from a file…**, or drop the `.scmbot` file
@@ -78,6 +96,7 @@ you built or trust.
 | `defines` | Preprocessor definitions, as `NAME` or `NAME=value`. |
 | `std` | `c++14`, `c++17` (the default) or `c++20`. |
 | `botMB` | The bot's room: BWAPI's data and the bot's heap, above the game's 2 GB; 64–2047 (768 if unsure, enough for McRave). An older `memoryMB` (the game's 1024 MB and the room) is still read: the room is `memoryMB` less 1024. |
+| `mod` | The mod the bot is made for: `{ "name", "hash", "link" }`, as `scmjs mod header --bot` writes it. It goes into the `.scmbot` file, and the page says "made for" the mod when the game's mod has that hash. |
 | `files` | Files the bot reads, put where it looks for them: `[{ "from": "bin/x.txt", "to": "x.txt" }]`. `to` is a path from StarCraft's folder, as on Windows. |
 | `entry` | For a client program: see below. |
 | `prelude` | A header included before every source, for anything else the bot assumed of its compiler. |
@@ -213,6 +232,7 @@ no count there.
 | `shim/` | Stand-ins for the Windows headers BWAPI and bots include | MIT |
 | `host/` | What BWAPI.dll's Windows side does, for BWAPI running beside the play page's engine | MIT |
 | `bwapi/` | BWAPI 4.4.0's in-game source ([github.com/bwapi/bwapi](https://github.com/bwapi/bwapi), tag v4.4.0), cut to the part that runs in the game; each change is marked `scm-sim:` | LGPL-3 (`bwapi/COPYING`, `bwapi/LICENSE.md`) |
+| `examples/` | Example bots: `cosmonarchy/`, a bot made for the Cosmonarchy mod (its header of the mod's names is generated, not kept here) | MIT |
 
 These files are kept in step with [scm-sim](https://scmjs.dev/play/), whose page loads the bots: a
 `.scmbot` file is built against the page's memory layout and its loader, which is why the

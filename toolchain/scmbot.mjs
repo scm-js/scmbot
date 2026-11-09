@@ -19,7 +19,12 @@
  *
  * The .scmbot file, little endian:
  *   "SCMBOT1\n", u32 header length, the header (JSON: format, key, name, memoryPages, base, commit, source, license
- *   (text), toolchain, mjs and wasm byte counts), then the module's JavaScript loader, then its wasm.
+ *   (text), toolchain, mod when scmbot.json names one, mjs and wasm byte counts), then the module's JavaScript loader,
+ *   then its wasm.
+ *
+ * A bot made for a mod names it in scmbot.json: "mod": { "name", "hash", "link" } (`scmjs mod header --bot` writes it
+ * with the mod's header of names). The build carries it into the header, where the play page and the runners read
+ * it: "made for <mod>" when the game's mod has that hash. An additive field, which a reader from before skips.
  */
 import { spawn } from "node:child_process";
 import { cpus } from "node:os";
@@ -377,7 +382,16 @@ function readConfig(dir) {
     source: typeof c.source === "string" ? c.source : "", commit: typeof c.commit === "string" ? c.commit : "",
     msvc: c.msvc !== false,
     entry: c.entry ? readEntry(c.entry) : null,
+    mod: c.mod === undefined ? null : readMod(c.mod),
   };
+}
+
+/** scmbot.json's "mod": the mod the bot is made for, as `scmjs mod header --bot` writes it. */
+function readMod(m) {
+  if (!m || typeof m !== "object" || typeof m.name !== "string" || !m.name.trim() || m.name.length > 64 || typeof m.hash !== "string" || !/^[0-9a-f]{16}$/.test(m.hash))
+    throw new Error("scmbot.json: mod is the mod the bot is made for: { \"name\": its name, \"hash\": its hash, sixteen hex digits (scmjs mod info shows it; scmjs mod header --bot writes it) }");
+  if (m.link !== undefined && (typeof m.link !== "string" || !/^https?:\/\//.test(m.link))) throw new Error("scmbot.json: mod.link is the address of the mod's makers (http or https), or left out");
+  return { name: m.name.trim(), hash: m.hash, ...(m.link ? { link: m.link } : {}) };
 }
 
 /**
@@ -507,13 +521,13 @@ async function build(dir) {
     throw new Error(`the link failed${missing.length ? `, ${missing.length} names undefined: ${missing.slice(0, 10).join("; ")}${missing.length > 10 ? "; …" : ""}` : `:\n${linked.err.slice(-2000)}`}${hints.map((h) => `\n  hint: ${h}`).join("")}`);
   }
   const js = readFileSync(mjs), bin = readFileSync(wasm);
-  const header = Buffer.from(JSON.stringify({ format: FORMAT, key: c.key, name: c.name, memoryPages: (BASE_MB + c.botMB) * 16, base: BASE_MB * 1048576, commit: c.commit, source: c.source, license: readFileSync(join(dir, c.license), "utf8"), toolchain: TOOLCHAIN, mjs: js.length, wasm: bin.length }));
+  const header = Buffer.from(JSON.stringify({ format: FORMAT, key: c.key, name: c.name, memoryPages: (BASE_MB + c.botMB) * 16, base: BASE_MB * 1048576, commit: c.commit, source: c.source, license: readFileSync(join(dir, c.license), "utf8"), toolchain: TOOLCHAIN, ...(c.mod ? { mod: c.mod } : {}), mjs: js.length, wasm: bin.length }));
   const head = Buffer.alloc(12);
   head.write("SCMBOT1\n", 0, "latin1");
   head.writeUInt32LE(header.length, 8);
   const bundle = join(out, `${c.key}.scmbot`);
   writeFileSync(bundle, Buffer.concat([head, header, js, bin]));
-  console.log(`\nout/${c.key}.scmbot: ${(statSync(bundle).size / 1048576).toFixed(1)} MB.\nOn the play page, Options → Community bots → Add a bot from a file…, then choose it for a computer.`);
+  console.log(`\nout/${c.key}.scmbot: ${(statSync(bundle).size / 1048576).toFixed(1)} MB${c.mod ? `, made for ${c.mod.name} (${c.mod.hash})` : ""}.\nOn the play page, Options → Community bots → Add a bot from a file…, then choose it for a computer.`);
 }
 
 /** Every .vcxproj under `root` (not in out/ or .git/). */
@@ -794,4 +808,4 @@ try {
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) await main();
 
-export { entrySource, fixLines, fixableErrors, patternRegex };
+export { entrySource, fixLines, fixableErrors, patternRegex, readMod };
