@@ -5,6 +5,12 @@ tournaments) into one `.scmbot` file, and play against it on [scmjs.dev/play](ht
 BWAPI runs beside the game there as it does in StarCraft 1.16.1, so a bot plays the way it plays
 in the tournaments.
 
+A bot written in JavaScript needs none of this: it is one file that the play page and
+`scmjs bot run` play as it is. [`examples/starter/starter.mjs`](examples/starter/starter.mjs) is
+one to start from, the play page's own Starter (download it, then add it on the page under
+Options, Community bots), and the [guide to writing bots](https://docs.scmjs.dev/bots/) explains
+it line by line.
+
 ## What you need
 
 - Docker (Docker Desktop on Windows or macOS).
@@ -236,7 +242,7 @@ no count there.
 | `shim/` | Stand-ins for the Windows headers BWAPI and bots include | MIT |
 | `host/` | What BWAPI.dll's Windows side does, for BWAPI running beside the play page's engine | MIT |
 | `bwapi/` | BWAPI 4.4.0's in-game source ([github.com/bwapi/bwapi](https://github.com/bwapi/bwapi), tag v4.4.0), cut to the part that runs in the game; each change is marked `scm-sim:` | LGPL-3 (`bwapi/COPYING`, `bwapi/LICENSE.md`) |
-| `examples/` | Example bots: `cosmonarchy/`, a bot made for the Cosmonarchy mod, in C++ (its header of the mod's names is generated, not kept here) and in JavaScript (`cosmonarchy.mjs`) | MIT |
+| `examples/` | Example bots: `starter/`, the play page's Starter in JavaScript, a bot to start from; `cosmonarchy/`, a bot made for the Cosmonarchy mod, in C++ (its header of the mod's names is generated, not kept here) and in JavaScript (`cosmonarchy.mjs`) | MIT |
 
 These files are kept in step with [scm-sim](https://scmjs.dev/play/), whose page loads the bots: a
 `.scmbot` file is built against the page's memory layout and its loader, which is why the
