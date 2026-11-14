@@ -67,6 +67,10 @@ the mod's name and hash to `scmbot.json`; the build carries them into the `.scmb
 so the play page and `scmjs bot run … --mod` say the bot is "made for" the mod. A small bot
 for Cosmonarchy, which mines, builds Stockades and attacks with Mavericks, is in
 [`examples/cosmonarchy`](examples/cosmonarchy): generate its header as above, then build it.
+The same bot written in JavaScript is beside it, `cosmonarchy.mjs`: a JavaScript bot needs no
+toolchain and no header (it is told the mod and given its names when it plays), so it runs as it is
+with `scmjs bot run cosmonarchy.mjs "<a map>" --mod "<the mod>"`, or added to the play page as a
+file.
 
 ## Playing it
 
@@ -232,7 +236,7 @@ no count there.
 | `shim/` | Stand-ins for the Windows headers BWAPI and bots include | MIT |
 | `host/` | What BWAPI.dll's Windows side does, for BWAPI running beside the play page's engine | MIT |
 | `bwapi/` | BWAPI 4.4.0's in-game source ([github.com/bwapi/bwapi](https://github.com/bwapi/bwapi), tag v4.4.0), cut to the part that runs in the game; each change is marked `scm-sim:` | LGPL-3 (`bwapi/COPYING`, `bwapi/LICENSE.md`) |
-| `examples/` | Example bots: `cosmonarchy/`, a bot made for the Cosmonarchy mod (its header of the mod's names is generated, not kept here) | MIT |
+| `examples/` | Example bots: `cosmonarchy/`, a bot made for the Cosmonarchy mod, in C++ (its header of the mod's names is generated, not kept here) and in JavaScript (`cosmonarchy.mjs`) | MIT |
 
 These files are kept in step with [scm-sim](https://scmjs.dev/play/), whose page loads the bots: a
 `.scmbot` file is built against the page's memory layout and its loader, which is why the
